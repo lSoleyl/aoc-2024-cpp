@@ -14,45 +14,44 @@
 #include <chrono>
 
 
+using Operator = int64_t(*)(int64_t a, int64_t b);
+
+int64_t add(int64_t a, int64_t b) { return a + b; }
+int64_t mul(int64_t a, int64_t b) { return a * b; }
+int64_t concat(int64_t a, int64_t b) { 
+  std::stringstream ss;
+  int64_t result;
+  ss << a << b;
+  ss >> result;
+  return result;  
+}
+
+std::vector<Operator> operators = { add,mul };
+
 struct Sequence {
   int64_t result;
   std::vector<int64_t> numbers;
 
 
   bool valid() const {
-    // First check whether we can reach that number by multiplying all values
-    // Commented out, because it doesn't really speed up anything here
-    // auto maxResult = std::ranges::fold_left(numbers, int64_t(0), [](int64_t sum, int64_t number) { return sum == 0 ? number : std::max(sum*number, sum+number); });
-    // if (maxResult < result) {
-    //   // The number is too big to be reachable
-    //   return false;
-    // }
+    // Simply brute force all operator combinations through recursively checking the sequence
+    return matchesResult(numbers[0], numbers.begin() + 1, numbers.end());
+  }
 
-    // For now just brute force all combinations... but we can search smarter by starting with + if the number is small and with * if the number is big
-    // No sequence is longer than 12 numbers, so we need at most 2^12 attempts (=4096) per sequence.
-    int maxAttempts = 1 << numbers.size() - 1; // = 2^(num-operators)
-    for (int operatorMask = 0; operatorMask < maxAttempts; ++operatorMask) {
-      // the bitmask will determine, which operators we are flipping
-      int64_t currentResult = numbers[0];
 
-      // Calculate the result according to our current 
-      for (int numIdx = 1; numIdx < numbers.size(); ++numIdx) {
-        if (((1 << (numIdx-1)) & operatorMask) != 0) {
-          currentResult *= numbers[numIdx];
-        } else {
-          currentResult += numbers[numIdx];
-        }
-      }
-         
-      if (currentResult == result) {
-        return true;
-      }
-
-      // try next operator combination
+  bool matchesResult(int64_t currentResult, std::vector<int64_t>::const_iterator numbersIt, std::vector<int64_t>::const_iterator numbersEnd) const {
+    if (numbersIt == numbersEnd) {
+      return currentResult == result;
     }
 
-
-
+    auto number = *numbersIt;
+    ++numbersIt;
+    for (auto op : operators) {
+      auto nextResult = op(currentResult, number);
+      if (matchesResult(nextResult, numbersIt, numbersEnd)) { // numbersIt already incremented
+        return true;
+      }
+    }
 
     return false;
   }
@@ -93,9 +92,27 @@ int main() {
 
 
 
+  // Part2:
+  // Now we simply add the third operator into the operator list and repeat
+  
+  operators.push_back(concat);
+
+  int64_t result2 = 0;
+  int correctSequences2 = 0;
+
+  for (auto& sequence : sequences) {
+    if (sequence.valid()) {
+      result2 += sequence.result;
+      ++correctSequences2;
+    }
+  }
+
+
+
   auto t2 = std::chrono::high_resolution_clock::now();
 
 
   std::cout << "Part1: " << result << " (correct = " << correctSequences << ")\n"; // 6231007345478 (correct = 274)
+  std::cout << "Part2: " << result2 << " (correct = " << correctSequences2 << ")\n";
   std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
