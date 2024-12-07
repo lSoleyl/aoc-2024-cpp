@@ -12,6 +12,7 @@
 #include <string_view>
 #include <execution>
 #include <chrono>
+#include <atomic>
 
 
 using Operator = int64_t(*)(int64_t a, int64_t b);
@@ -19,14 +20,13 @@ using Operator = int64_t(*)(int64_t a, int64_t b);
 int64_t add(int64_t a, int64_t b) { return a + b; }
 int64_t mul(int64_t a, int64_t b) { return a * b; }
 int64_t concat(int64_t a, int64_t b) { 
-  std::stringstream ss;
-  int64_t result;
-  ss << a << b;
-  ss >> result;
-  return result;  
+  // Determine the number of digits in b and just multiply a by 10^digits and add to b. This is by far more efficient than the string operation.
+  // 1 = 0, 9 = 0...., 10 = 1, 99 = 1...., 100 = 2
+  int bDigits = static_cast<int>(std::log10(b) + 1);
+  return a * std::pow<int64_t>(10, bDigits) + b;
 }
 
-std::vector<Operator> operators = { add,mul };
+std::vector<Operator> operators = { add, mul };
 
 struct Sequence {
   int64_t result;
@@ -97,22 +97,24 @@ int main() {
   
   operators.push_back(concat);
 
-  int64_t result2 = 0;
-  int correctSequences2 = 0;
+  std::atomic<int64_t> result2 = 0;
+  std::atomic<int> correctSequences2 = 0;
 
-  for (auto& sequence : sequences) {
+
+  // Idk why, but when adding std::execution::par the loop takes 30 instead of 8 seconds!!! But how!?
+  // Okay it was the inefficient implementation of concat(). By implementing concat() arithmetically we could
+  // reduce execution time down to 176ms (single-thread) or 37ms (parallel)
+  std::for_each(std::execution::par, sequences.begin(), sequences.end(), [&](const Sequence& sequence) {
     if (sequence.valid()) {
       result2 += sequence.result;
       ++correctSequences2;
     }
-  }
-
-
+  });
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
 
   std::cout << "Part1: " << result << " (correct = " << correctSequences << ")\n"; // 6231007345478 (correct = 274)
-  std::cout << "Part2: " << result2 << " (correct = " << correctSequences2 << ")\n";
+  std::cout << "Part2: " << result2 << " (correct = " << correctSequences2 << ")\n"; // 333027885676693 (correct = 539)
   std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
