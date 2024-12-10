@@ -1,14 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include <ranges>
 #include <string>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <sstream>
+#include <list>
 #include <algorithm>
-#include <string_view>
-#include <execution>
 #include <chrono>
 
 struct Block {
