@@ -117,9 +117,52 @@ int main()
   }
 
 
+  // Part 2: For the second part we need to invert the iteration process
+  //         We start by finding the last not yet processed file block and then search for a free space to insert it into
+  blocks = std::move(blocksCopy);
+  
+  // By terminating on blocks.begin() we may attempt to move already moved blocks, but since each block is moved to the first fitting position
+  // there will be no free block where we could move the already moved block into.
+  for (auto nextDataBlockPos = --(blocks.end()); nextDataBlockPos != blocks.begin(); --nextDataBlockPos) {
+    auto& block = *nextDataBlockPos;
+    if (!block.isFree()) {
+      // skip free blocks, here we cannot delete them, because there is no guarantee that we would actually use them
+      auto blockSize = nextDataBlockPos->size;
+      auto freeBlockPos = std::find_if(blocks.begin(), nextDataBlockPos, [=](const Block& block) { return block.isFree() && block.size >= blockSize; });
+      if (freeBlockPos != nextDataBlockPos) {
+        // we can actually move the whole file
+        if (freeBlockPos->size > blockSize) {
+          // we must insert the data block before this free block and reduce the free block's size
+          blocks.insert(freeBlockPos, *nextDataBlockPos);
+          freeBlockPos->size -= blockSize;
+        } else {
+          // Free block size matches exactly
+          *freeBlockPos = *nextDataBlockPos;
+        }
+
+        // we DO NOT erase the just moved block because there may be data following it and this would lead to wrong offsets
+        nextDataBlockPos->id = Block::FREE; // the size doesn't change
+      }
+    }
+
+    // continue with next block
+  }
 
 
-
+  // Now count up the checksum
+  int64_t checksum2 = 0;
+  offset = 0;
+  for (auto& block : blocks) {
+    // We must handle free blocks correctly
+    if (block.isFree()) {
+      offset += block.size;
+    } else {
+      for (auto endOffset = offset + block.size; offset != endOffset; ++offset) {
+        // idk why the number is considered huge... it easily fits into 64-Bit int
+        checksum2 += offset * block.id;
+      }
+    }
+  }
 
 
 
@@ -127,5 +170,6 @@ int main()
   auto t2 = std::chrono::high_resolution_clock::now();
 
   std::cout << "Part1: " << checksum << "\n"; // 6216544403458
+  std::cout << "Part2: " << checksum2 << "\n"; // 6231447300867
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

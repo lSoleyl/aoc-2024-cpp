@@ -23,5 +23,6 @@
     <Text Include="input.txt">
       <Filter>Ressourcendateien</Filter>
     </Text>
+    <Text Include="sample.txt" />
   </ItemGroup>
 </Project>
