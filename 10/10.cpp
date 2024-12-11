@@ -1,17 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <ranges>
-#include <regex>
 #include <string>
 #include <vector>
-#include <iterator>
-#include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <sstream>
 #include <algorithm>
-#include <string_view>
-#include <execution>
 #include <chrono>
+#include <queue>
 
 
 struct Vector {
@@ -99,8 +95,7 @@ struct MapElement {
   MapElement(char ch) : height(ch) {}
 
   int8_t height; // as ASCII char
-  std::unordered_set<int/*offset*/> reachableTops; // we need a set to filter out reaching the same top via two different paths
-  int trailCount = 0; // for Part 2 we don't care about duplicates
+  std::vector<int/*offset*/> reachableTops; // here we collect all reachable tops (with duplicates), which we will later filter out
 };
 
 std::ostream& operator<<(std::ostream& out, const MapElement& element) {
@@ -123,8 +118,7 @@ int main() {
   // Part1: First collect all '9' elements into the toProcess queue and then process each one of them
   for (int offset = 0; offset < field.data.size(); ++offset) {
     if (field.data[offset].height == '9') { // since we must reach a '9' we are only interested in paths, which end at '9'
-      field.data[offset].reachableTops.insert(offset); // initialize: only this top is reachable
-      field.data[offset].trailCount = 1; // only one path to reach this '9'
+      field.data[offset].reachableTops.push_back(offset); // initialize: only this top is reachable
       toProcess.push(offset);
     }
   }
@@ -145,12 +139,10 @@ int main() {
           // a valid trail continuation
           if (!nextNode.reachableTops.empty()) {
             // already expanded there by another node
-            nextNode.reachableTops.insert(currentNode.reachableTops.begin(), currentNode.reachableTops.end());
-            nextNode.trailCount += currentNode.trailCount;
+            nextNode.reachableTops.insert(nextNode.reachableTops.end(), currentNode.reachableTops.begin(), currentNode.reachableTops.end());
           } else {
             // node not yet expanded and into processing queue
             nextNode.reachableTops = currentNode.reachableTops;
-            nextNode.trailCount = currentNode.trailCount;
             toProcess.push(field.toOffset(nextPosition));
           }
         }
@@ -161,20 +153,19 @@ int main() {
 
 
   // Now we simply need to sum up the trailHeads values in all '0' nodes
-  int headSum = 0;
-  int distinctSum = 0;
+  int allHeadSum = 0;
+  int uniqueHeadSum = 0;
   for (auto& node : field.data) {
     if (node.height == '0') {
-      //FIXME: By collecting all nodes in a vector, we could simply do sort().unique().size() and wouldn't need the separate trailCount,
-      //       but for some reason this doesn't work with ranges.
-      headSum += node.reachableTops.size();
-      distinctSum += node.trailCount;
+      // Now we can determine the reachable heads with duplicates and without.
+      allHeadSum += node.reachableTops.size();
+      uniqueHeadSum += (node.reachableTops | std::ranges::to<std::set>()).size();
     }
   }
   
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << headSum << "\n"; // 617 
-  std::cout << "Part2: " << distinctSum << "\n"; // 1477
+  std::cout << "Part1: " << uniqueHeadSum << "\n"; // 617 
+  std::cout << "Part2: " << allHeadSum << "\n"; // 1477
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
