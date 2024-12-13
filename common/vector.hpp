@@ -12,6 +12,8 @@ struct Vector {
   static const Vector DOWN;
   static const Vector LEFT;
 
+  static const Vector ALL_DIRECTIONS[4];
+
   Vector operator+(const Vector& other) const { return Vector(column + other.column, row + other.row); }
   Vector& operator+=(const Vector& other) {
     column += other.column;
@@ -53,6 +55,7 @@ const Vector Vector::RIGHT(1, 0);
 const Vector Vector::DOWN(0, 1);
 const Vector Vector::LEFT(-1, 0);
 
+const Vector Vector::ALL_DIRECTIONS[4] = { Vector::UP, Vector::RIGHT, Vector::DOWN, Vector::LEFT };
 
 namespace std {
   template<>

@@ -8,7 +8,7 @@
 template<typename Element>
 struct FieldT {
   FieldT(std::istream&& source) : size(0, 0) {
-    for (auto line : std::ranges::subrange(std::istream_iterator<std::string>(source), std::istream_iterator<std::string>())) {
+    for (auto line : std::views::istream<std::string>(source)) {
       for (char ch : line) {
         data.emplace_back(ch); // Element must be constructible from a single char
       }
@@ -17,8 +17,9 @@ struct FieldT {
     }
   }
 
+  template<typename Self>
+  auto& operator[](this Self&& self, const Vector& pos) { return self.data[self.toOffset(pos)]; }
   bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
-  Element& operator[](const Vector& pos) { return data[toOffset(pos)]; }
   int toOffset(const Vector& pos) const { return pos.row * size.column + pos.column; }
   Vector fromOffset(size_t offset) const { return Vector(offset % size.column, offset / size.column); }
   size_t findOffset(const Element& element, size_t startOffset = 0) const {
