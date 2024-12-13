@@ -3,67 +3,78 @@
 #include <xhash>
 #include <iostream>
 
+template<typename T>
+struct VectorT {
+  VectorT(T column = 0, T row = 0) : column(column), row(row) {}
 
-struct Vector {
-  Vector(int column = 0, int row = 0) : column(column), row(row) {}
+  static const VectorT ZERO;
+  static const VectorT UP;
+  static const VectorT RIGHT;
+  static const VectorT DOWN;
+  static const VectorT LEFT;
 
-  static const Vector UP;
-  static const Vector RIGHT;
-  static const Vector DOWN;
-  static const Vector LEFT;
+  static const VectorT ALL_DIRECTIONS[4];
 
-  static const Vector ALL_DIRECTIONS[4];
-
-  Vector operator+(const Vector& other) const { return Vector(column + other.column, row + other.row); }
-  Vector& operator+=(const Vector& other) {
+  VectorT operator+(const VectorT& other) const { return VectorT(column + other.column, row + other.row); }
+  VectorT& operator+=(const VectorT& other) {
     column += other.column;
     row += other.row;
     return *this;
   }
 
-  Vector operator-(const Vector& other) const { return Vector(column - other.column, row - other.row); }
-  Vector& operator-=(const Vector& other) {
+  VectorT operator-(const VectorT& other) const { return VectorT(column - other.column, row - other.row); }
+  VectorT& operator-=(const VectorT& other) {
     column -= other.column;
     row -= other.row;
     return *this;
   }
 
-  Vector operator*(int factor) const { return Vector(column * factor, row * factor); }
+  // Important: the following operation performs integer division!
+  VectorT operator/(T divisor) const { return VectorT(column / divisor, row / divisor); }
+  VectorT operator*(T factor) const { return VectorT(column * factor, row * factor); }
 
-  Vector rotateCW() const {
-    return Vector(-row, column); //rotated by 90° clockwise
+  VectorT rotateCW() const {
+    return VectorT(-row, column); //rotated by 90° clockwise
   }
 
-  Vector rotateCCW() const {
-    return Vector(row, -column); //rotate by 90° counter clockwise
+  VectorT rotateCCW() const {
+    return VectorT(row, -column); //rotate by 90° counter clockwise
   }
 
 
-  bool operator==(const Vector& other) const = default;
-  bool operator!=(const Vector& other) const = default;
-  bool operator<(const Vector& other) const { return column < other.column && row < other.row; }
-  bool operator<=(const Vector& other) const { return column <= other.column && row <= other.row; }
-  bool operator>(const Vector& other) const { return column > other.column && row > other.row; }
-  bool operator>=(const Vector& other) const { return column >= other.column && row >= other.row; }
+  bool operator==(const VectorT& other) const = default;
+  bool operator!=(const VectorT& other) const = default;
+  bool operator<(const VectorT& other) const { return column < other.column && row < other.row; }
+  bool operator<=(const VectorT& other) const { return column <= other.column && row <= other.row; }
+  bool operator>(const VectorT& other) const { return column > other.column && row > other.row; }
+  bool operator>=(const VectorT& other) const { return column >= other.column && row >= other.row; }
 
-  int column, row;
+  T column, row;
 };
 
+template<typename T>
+VectorT<T> operator*(T factor, const VectorT<T>& vector) {
+  return vector * factor;
+}
 
-const Vector Vector::UP(0, -1); // rows are incremented down
-const Vector Vector::RIGHT(1, 0);
-const Vector Vector::DOWN(0, 1);
-const Vector Vector::LEFT(-1, 0);
+template<typename T> const VectorT<T> VectorT<T>::ZERO(0, 0);
+template<typename T> const VectorT<T> VectorT<T>::UP(0, -1); // rows are incremented down
+template<typename T> const VectorT<T> VectorT<T>::RIGHT(1, 0);
+template<typename T> const VectorT<T> VectorT<T>::DOWN(0, 1);
+template<typename T> const VectorT<T> VectorT<T>::LEFT(-1, 0);
 
-const Vector Vector::ALL_DIRECTIONS[4] = { Vector::UP, Vector::RIGHT, Vector::DOWN, Vector::LEFT };
+template<typename T> const VectorT<T> VectorT<T>::ALL_DIRECTIONS[4] = { VectorT<T>::UP, VectorT<T>::RIGHT, VectorT<T>::DOWN, VectorT<T>::LEFT };
 
 namespace std {
-  template<>
-  struct hash<Vector> {
-    size_t operator()(const Vector& vec) const { return ((vec.row << 16) ^ vec.column); }
+  template<typename T>
+  struct hash<VectorT<T>> {
+    size_t operator()(const VectorT<T>& vec) const { return ((vec.row << 16) ^ vec.column); }
   };
 }
 
-std::ostream& operator<<(std::ostream& out, const Vector& v) {
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const VectorT<T>& v) {
   return out << "(" << v.column << "," << v.row << ")";
 }
+
+using Vector = VectorT<int>;

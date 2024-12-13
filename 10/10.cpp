@@ -24,7 +24,7 @@ std::ostream& operator<<(std::ostream& out, const MapElement& element) {
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Field<MapElement> field(std::ifstream("input.txt"));
+  FieldT<MapElement> field(std::ifstream("input.txt"));
 
   const auto ALL_DIRECTIONS = { Vector::UP, Vector::LEFT, Vector::DOWN, Vector::RIGHT };
 
