@@ -20,6 +20,8 @@ struct FieldT {
   template<typename Self>
   auto& operator[](this Self&& self, const Vector& pos) { return self.data[self.toOffset(pos)]; }
   bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
+  bool isAt(const Element& element, const Vector& pos) const { return validPosition(pos) && (*this)[pos] == element; }
+
   int toOffset(const Vector& pos) const { return pos.row * size.column + pos.column; }
   Vector fromOffset(size_t offset) const { return Vector(offset % size.column, offset / size.column); }
   size_t findOffset(const Element& element, size_t startOffset = 0) const {
