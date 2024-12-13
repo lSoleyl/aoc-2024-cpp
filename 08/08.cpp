@@ -1,92 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include <ranges>
-#include <regex>
-#include <string>
 #include <vector>
-#include <iterator>
 #include <unordered_map>
 #include <unordered_set>
-#include <sstream>
-#include <algorithm>
-#include <string_view>
-#include <execution>
 #include <chrono>
 
-
-struct Vector {
-  Vector(int column = 0, int row = 0) : column(column), row(row) {}
-
-  Vector operator+(const Vector& other) const { return Vector(column + other.column, row + other.row); }
-  Vector& operator+=(const Vector& other) {
-    column += other.column;
-    row += other.row;
-    return *this;
-  }
-
-  Vector operator-(const Vector& other) const { return Vector(column - other.column, row - other.row); }
-  Vector& operator-=(const Vector& other) {
-    column -= other.column;
-    row -= other.row;
-    return *this;
-  }
-
-  Vector operator*(int factor) const { return Vector(column * factor, row * factor); }
-
-  Vector rotateCW() const {
-    return Vector(-row, column); //rotated by 90° clockwise
-  }
-
-
-  bool operator==(const Vector& other) const = default;
-  bool operator!=(const Vector& other) const = default;
-  bool operator<(const Vector& other) const { return column < other.column && row < other.row; }
-  bool operator<=(const Vector& other) const { return column <= other.column && row <= other.row; }
-  bool operator>(const Vector& other) const { return column > other.column && row > other.row; }
-  bool operator>=(const Vector& other) const { return column >= other.column && row >= other.row; }
-
-  int column, row;
-};
-
-namespace std {
-  template<>
-  struct hash<Vector> {
-    size_t operator()(const Vector& vec) const { return (vec.row << 16 | vec.column); }
-  };
-
-  template<>
-  struct hash<std::pair<Vector, Vector>> {
-    size_t operator()(const std::pair<Vector, Vector>& posDir) const { return std::hash<Vector>()(posDir.first) ^ std::hash<Vector>()(posDir.second); }
-  };
-}
-
-struct Field {
-  Field(std::istream&& source) : size(0, 0) {
-    for (auto line : std::ranges::subrange(std::istream_iterator<std::string>(source), std::istream_iterator<std::string>())) {
-      data += line;
-      size.column = line.length();
-      ++size.row;
-    }
-  }
-
-  bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
-  char& operator[](const Vector& pos) { return data[toOffset(pos)]; }
-  int toOffset(const Vector& pos) const { return pos.row * size.column + pos.column; }
-  Vector fromOffset(size_t offset) const { return Vector(offset % size.column, offset / size.column); }
-  std::string_view row(int row) const {
-    return std::string_view(data.data() + row * size.column, size.column);
-  }
-
-  Vector size;
-  std::string data;
-};
-
-std::ostream& operator<<(std::ostream& out, const Field& field) {
-  for (int row = 0; row < field.size.row; ++row) {
-    out << field.row(row) << "\n";
-  }
-  return out;
-}
+#include <common/field.hpp>
 
 int main()
 {

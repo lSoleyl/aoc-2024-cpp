@@ -15,15 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="06.cpp">
+    <ClCompile Include="12.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="input.txt">
+    <Text Include="sample.txt">
       <Filter>Ressourcendateien</Filter>
     </Text>
-    <Text Include="sample.txt">
+    <Text Include="input.txt">
       <Filter>Ressourcendateien</Filter>
     </Text>
   </ItemGroup>

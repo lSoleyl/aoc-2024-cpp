@@ -1,119 +1,13 @@
 #include <iostream>
 #include <fstream>
-#include <ranges>
-#include <regex>
-#include <string>
-#include <vector>
-#include <iterator>
-#include <unordered_map>
 #include <unordered_set>
-#include <sstream>
 #include <algorithm>
-#include <string_view>
 #include <execution>
 #include <chrono>
 
-struct Vector {
-  Vector(int column = 0, int row = 0) : column(column), row(row) {}
+#include <common/field.hpp>
+#include <common/hash.hpp>
 
-  Vector operator+(const Vector& other) const { return Vector(column + other.column, row + other.row); }
-  Vector& operator+=(const Vector& other) {
-    column += other.column;
-    row += other.row;
-    return *this;
-  }
-
-  Vector operator-(const Vector& other) const { return Vector(column - other.column, row - other.row); }
-  Vector& operator-=(const Vector& other) {
-    column -= other.column;
-    row -= other.row;
-    return *this;
-  }
-
-  Vector operator*(int factor) const { return Vector(column * factor, row * factor); }
-
-  Vector rotateCW() const {
-    return Vector(-row, column); //rotated by 90° clockwise
-  }
-
-
-  bool operator==(const Vector& other) const = default;
-  bool operator!=(const Vector& other) const = default;
-  bool operator<(const Vector& other) const { return column < other.column && row < other.row; }
-  bool operator<=(const Vector& other) const { return column <= other.column && row <= other.row; }
-  bool operator>(const Vector& other) const { return column > other.column && row > other.row; }
-  bool operator>=(const Vector& other) const { return column >= other.column && row >= other.row; }
-
-  int column, row;
-};
-
-namespace std {
-  template<>
-  struct hash<Vector> {
-    size_t operator()(const Vector& vec) const { return (vec.row << 16 | vec.column); }
-  };
-
-  template<>
-  struct hash<std::pair<Vector, Vector>> {
-    size_t operator()(const std::pair<Vector, Vector>& posDir) const { return std::hash<Vector>()(posDir.first) ^ std::hash<Vector>()(posDir.second); }
-  };
-}
-
-struct Field {
-  Field(std::istream&& source) : size(0, 0) {
-    for (auto line : std::ranges::subrange(std::istream_iterator<std::string>(source), std::istream_iterator<std::string>())) {
-      data += line;
-      size.column = line.length();
-      ++size.row;
-    }
-  }
-
-  struct iterator {
-    using element_type = char;
-    using reference = char&;
-    using pointer = char*;
-    using iterator_category = std::forward_iterator_tag;
-    using iterator_concept = std::input_iterator_tag;
-    using difference_type = ptrdiff_t;
-
-    iterator() : field(nullptr) {}
-    iterator(Field& field, const Vector& pos, const Vector& direction = Vector(0, 0)) : field(&field), pos(pos), direction(direction) {}
-
-    struct sentinel {};
-
-    bool operator==(const iterator& other) const { return pos == other.pos; }
-    bool operator!=(const iterator& other) const { return pos != other.pos; }
-
-    // We must use negate the condition due to the partial ordering of vectors
-    bool operator==(sentinel) const { return !valid(); }
-    bool valid() const { return pos >= Vector(0, 0) && pos < field->size; }
-
-    iterator& operator++() { pos += direction; return *this; }
-    iterator operator++(int) { auto copy = *this; ++(*this); return copy; }
-    char& operator*() const { return field->data[pos.row * field->size.column + pos.column]; }
-
-    Vector pos, direction;
-    Field* field;
-  };
-
-  bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
-  char& operator[](const Vector& pos) { return data[toOffset(pos)]; }
-  int toOffset(const Vector& pos) const { return pos.row * size.column + pos.column; }
-  Vector fromOffset(size_t offset) const { return Vector(offset % size.column, offset / size.column); }
-  std::string_view row(int row) const {
-    return std::string_view(data.data() + row * size.column, size.column);
-  }
-
-  Vector size;
-  std::string data;
-};
-
-std::ostream& operator<<(std::ostream& out, const Field& field) {
-  for (int row = 0; row < field.size.row; ++row) {
-    out << field.row(row) << "\n";
-  }
-  return out;
-}
 
 template<bool storeVisited>
 struct State {
@@ -170,7 +64,7 @@ int main() {
 
   Field field(std::ifstream("input.txt"));
   
-  auto startPosition = field.fromOffset(field.data.find('^'));
+  auto startPosition = field.fromOffset(field.findOffset('^'));
 
   
   const State<false> startState(field, startPosition, Vector(0, -1)); // start direction is UP as rows increment downward
