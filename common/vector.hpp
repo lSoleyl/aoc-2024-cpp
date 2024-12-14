@@ -3,6 +3,16 @@
 #include <xhash>
 #include <iostream>
 
+
+namespace {
+  template<typename T>
+  T pMod(T a, T b) {
+    auto result = a % b;
+    return result < 0 ? result + b : result;
+  }
+}
+
+
 template<typename T>
 struct VectorT {
   VectorT(T column = 0, T row = 0) : column(column), row(row) {}
@@ -31,7 +41,39 @@ struct VectorT {
 
   // Important: the following operation performs integer division!
   VectorT operator/(T divisor) const { return VectorT(column / divisor, row / divisor); }
+  VectorT& operator/(T divisor) {
+    column /= divisor;
+    row /= divisor;
+    return *this;
+  }
   VectorT operator*(T factor) const { return VectorT(column * factor, row * factor); }
+  VectorT& operator*=(T factor) {
+    column *= factor;
+    row *= factor;
+    return *this;
+  }
+
+  VectorT operator%(T divisor) const { return VectorT(column % divisor, row % divisor); }
+  VectorT& operator%=(T divisor) {
+    column %= divisor;
+    row %= divisor;
+    return *this;
+  }
+
+  // element wise modulo
+  VectorT operator%(const VectorT& other) const { return VectorT(column % other.column, row % other.row); }
+  VectorT& operator%=(const VectorT& other) {
+    column %= other.column;
+    row %= other.row;
+    return *this;
+  }
+
+  // positive modulo
+  VectorT pMod(T divisor) const { return VectorT(::pMod(column, divisor), ::pMod(row, divisor)); }
+
+  // element wise positive modulo
+  VectorT pMod(const VectorT& other) const { return VectorT(::pMod(column, other.column), ::pMod(row, other.row)); }
+
 
   VectorT rotateCW() const {
     return VectorT(-row, column); //rotated by 90° clockwise
@@ -41,6 +83,12 @@ struct VectorT {
     return VectorT(row, -column); //rotate by 90° counter clockwise
   }
 
+  // Apply given functor to each component and return the result
+  template<typename MapFn>
+  VectorT apply(MapFn mapFn) const { return VectorT(mapFn(column), mapFn(row)); }
+
+  // Performs a component wise compare and returns a result vector with -1,0,1 for each component
+  VectorT compare(const VectorT& other) const { return (*this - other).apply([](int value) { return std::clamp(value, -1, 1); }); }
 
   bool operator==(const VectorT& other) const = default;
   bool operator!=(const VectorT& other) const = default;
