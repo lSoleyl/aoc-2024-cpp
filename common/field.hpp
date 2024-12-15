@@ -8,6 +8,10 @@
 
 template<typename Element>
 struct FieldT {
+  FieldT(int width, int height, Element fill) : size(width, height) {
+    data.resize(width * height, fill);
+  }
+
   FieldT(std::istream&& source) : FieldT(source) {}
   FieldT(std::istream& source) : size(0, 0) {
     for (std::string line; std::getline(source, line);) {
