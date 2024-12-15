@@ -19,7 +19,7 @@ struct Game {
   Button A, B; // A costs 3, B costs 1
   VectorT<int64_t> prize; 
 
-  int64_t countCost(Vector position = Vector::ZERO, int currentCost = 0, int currentButtons = 0) const {
+  int64_t countCost(Vector position = Vector::Zero, int currentCost = 0, int currentButtons = 0) const {
     auto term1 = A.column * prize.row - A.row * prize.column;
     auto term2 = A.column * B.row - A.row * B.column;
 

@@ -26,8 +26,6 @@ int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
   FieldT<MapElement> field(std::ifstream("input.txt"));
 
-  const auto ALL_DIRECTIONS = { Vector::UP, Vector::LEFT, Vector::DOWN, Vector::RIGHT };
-
   // We collect the nodes to process in a queue to ensure we will first process all '9', then all '8', ... that way
   // we never have to update any trailhead values for other numbers than the current processed one
 
@@ -47,7 +45,7 @@ int main() {
 
     // Expand the current node by checking all directions
     auto& currentNode = field[nodePosition];
-    for (auto direction : ALL_DIRECTIONS) {
+    for (auto direction : Vector::AllDirections) {
       auto nextPosition = nodePosition + direction;
       if (field.validPosition(nextPosition)) {
         // We can expand in that direction

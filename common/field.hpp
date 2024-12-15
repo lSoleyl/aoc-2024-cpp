@@ -2,17 +2,22 @@
 
 #include <ranges>
 #include <iostream>
+#include <string>
 #include <vector>
 #include "vector.hpp"
 
 template<typename Element>
 struct FieldT {
-  FieldT(std::istream&& source) : size(0, 0) {
-    for (auto line : std::views::istream<std::string>(source)) {
+  FieldT(std::istream&& source) : FieldT(source) {}
+  FieldT(std::istream& source) : size(0, 0) {
+    for (std::string line; std::getline(source, line);) {
+      if (line.empty()) { // special case for Day 15 where the field is followed by a newline and instructions
+        break;
+      }
       for (char ch : line) {
         data.emplace_back(ch); // Element must be constructible from a single char
       }
-      size.column = line.length();
+      size.column = static_cast<int>(line.length());
       ++size.row;
     }
   }

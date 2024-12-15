@@ -2,6 +2,7 @@
 
 #include <xhash>
 #include <iostream>
+#include <algorithm> // std::clamp
 
 
 namespace {
@@ -17,13 +18,13 @@ template<typename T>
 struct VectorT {
   VectorT(T column = 0, T row = 0) : column(column), row(row) {}
 
-  static const VectorT ZERO;
-  static const VectorT UP;
-  static const VectorT RIGHT;
-  static const VectorT DOWN;
-  static const VectorT LEFT;
+  static const VectorT Zero;
+  static const VectorT Up;
+  static const VectorT Right;
+  static const VectorT Down;
+  static const VectorT Left;
 
-  static const VectorT ALL_DIRECTIONS[4];
+  static const VectorT AllDirections[4];
 
   VectorT operator+(const VectorT& other) const { return VectorT(column + other.column, row + other.row); }
   VectorT& operator+=(const VectorT& other) {
@@ -105,13 +106,13 @@ VectorT<T> operator*(T factor, const VectorT<T>& vector) {
   return vector * factor;
 }
 
-template<typename T> const VectorT<T> VectorT<T>::ZERO(0, 0);
-template<typename T> const VectorT<T> VectorT<T>::UP(0, -1); // rows are incremented down
-template<typename T> const VectorT<T> VectorT<T>::RIGHT(1, 0);
-template<typename T> const VectorT<T> VectorT<T>::DOWN(0, 1);
-template<typename T> const VectorT<T> VectorT<T>::LEFT(-1, 0);
+template<typename T> const VectorT<T> VectorT<T>::Zero(0, 0);
+template<typename T> const VectorT<T> VectorT<T>::Up(0, -1); // rows are incremented down
+template<typename T> const VectorT<T> VectorT<T>::Right(1, 0);
+template<typename T> const VectorT<T> VectorT<T>::Down(0, 1);
+template<typename T> const VectorT<T> VectorT<T>::Left(-1, 0);
 
-template<typename T> const VectorT<T> VectorT<T>::ALL_DIRECTIONS[4] = { VectorT<T>::UP, VectorT<T>::RIGHT, VectorT<T>::DOWN, VectorT<T>::LEFT };
+template<typename T> const VectorT<T> VectorT<T>::AllDirections[4] = { VectorT<T>::Up, VectorT<T>::Right, VectorT<T>::Down, VectorT<T>::Left };
 
 namespace std {
   template<typename T>
