@@ -18,13 +18,17 @@ template<typename T>
 struct VectorT {
   VectorT(T column = 0, T row = 0) : column(column), row(row) {}
 
+  // We sadly cannot assign the values here or use constexpr, because the class is "incomplete" at this time
   static const VectorT Zero;
   static const VectorT Up;
   static const VectorT Right;
   static const VectorT Down;
   static const VectorT Left;
 
-  static const VectorT AllDirections[4];
+  static const std::initializer_list<const VectorT>& AllDirections() {
+    static const std::initializer_list<const VectorT> directions = { VectorT::Up, VectorT::Right, VectorT::Down, VectorT::Left };
+    return directions;
+  }
 
   VectorT operator+(const VectorT& other) const { return VectorT(column + other.column, row + other.row); }
   VectorT& operator+=(const VectorT& other) {
@@ -122,8 +126,6 @@ template<typename T> const VectorT<T> VectorT<T>::Up(0, -1); // rows are increme
 template<typename T> const VectorT<T> VectorT<T>::Right(1, 0);
 template<typename T> const VectorT<T> VectorT<T>::Down(0, 1);
 template<typename T> const VectorT<T> VectorT<T>::Left(-1, 0);
-
-template<typename T> const VectorT<T> VectorT<T>::AllDirections[4] = { VectorT<T>::Up, VectorT<T>::Right, VectorT<T>::Down, VectorT<T>::Left };
 
 namespace std {
   template<typename T>

@@ -3,7 +3,9 @@
 #include <chrono>
 #include <ranges>
 #include <set>
+#include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <common/field.hpp>
 #include <common/hash.hpp>
@@ -31,7 +33,7 @@ struct ExpandEntry {
 
   int cost; // to reach this position
   Vector position; // of the node to expand
-  Vector orientation; // at the position
+  Vector orientation; // with the given orientation
 };
 
 
@@ -42,23 +44,23 @@ struct Maze : public Field {
     endPos = fromOffset(findOffset('E'));
   }
 
+  // Part 1
   int solve() { // <- return the min cost reaching end
-    
-    std::set<ExpandEntry> expandList = { {0, startPos, Vector::Right } };
+    std::set<ExpandEntry> expandList = { {0, startPos, Vector::Right }};
 
     while (!expandList.empty()) {
       auto entry = *expandList.begin();
       expandList.erase(expandList.begin());
-
-      if (entry.position == endPos) {
-        // we are expanding the end tile -> the cost are now known
-        return entry.cost;
-      }
       
       if (!updateCosts(entry)) {
         // DO not expand this node, because we already know a cheaper (or equally expensive) path to this node
         // which thus has already been expanded
         continue;
+      }
+
+      if (entry.position == endPos) {
+        // We are expanding the end tile -> we are done
+        return entry.cost;
       }
 
       // We have 3 paths to expand (step forward, CW rotation, CCW rotation)
@@ -76,6 +78,45 @@ struct Maze : public Field {
 
     return -1;
   }
+
+  // Part 2
+  std::unordered_set<Vector> findBestPathPositions(int bestPathCost) const {
+    std::unordered_set<Vector> positions;
+    std::set<ExpandEntry> toCheck;
+
+    for (auto& [entry, cost] : costMap) {
+      if (entry.first == endPos && cost == bestPathCost) {
+        // start backtracking from here
+        toCheck.insert({ cost, entry.first, entry.second });
+      }
+    }
+
+    while (!toCheck.empty()) {
+      auto entry = *toCheck.begin();
+      toCheck.erase(toCheck.begin());
+      positions.insert(entry.position); // note down part of the path
+
+      // Now we have 3 options to backtrack the path and we will chose each, which will reduce the cost
+      // 1. step in reverse direction
+      auto stepFromPos = entry.position - entry.orientation;
+      if (getCost(stepFromPos, entry.orientation) == entry.cost - StepCost) {
+        toCheck.insert({ entry.cost - StepCost, stepFromPos, entry.orientation });
+      }
+
+      // 2. rotate CW
+      if (getCost(entry.position, entry.orientation.rotateCW()) == entry.cost - RotationCost) {
+        toCheck.insert({ entry.cost - RotationCost, entry.position, entry.orientation.rotateCW() });
+      }
+
+      // 3. rotate CCW
+      if (getCost(entry.position, entry.orientation.rotateCCW()) == entry.cost - RotationCost) {
+        toCheck.insert({ entry.cost - RotationCost, entry.position, entry.orientation.rotateCCW() });
+      }
+    }
+
+    return positions;
+  }
+
 
   int getCost(Vector position, Vector orientation) const {
     auto pos = costMap.find({ position, orientation });
@@ -114,10 +155,17 @@ int main() {
   Maze maze(std::ifstream("input.txt"));
 
   auto minCost = maze.solve();
-
+  auto positions = maze.findBestPathPositions(minCost);
   
+  // to print the path
+  // for (auto position : positions) {
+  //   maze[position] = 'O';
+  // }
+
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << minCost << "\n";
+  std::cout << "Part 1: " << minCost << "\n"; // 109516
+  std::cout << "Part 2: " << positions.size() << "\n"; // 568
+
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

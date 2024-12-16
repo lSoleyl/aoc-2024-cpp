@@ -22,7 +22,7 @@ struct Region {
 private:
   void collectPositions(const Vector& startPosition, const Field& field) {
     positions.insert(startPosition);
-    for (auto direction : Vector::AllDirections) {
+    for (auto direction : Vector::AllDirections()) {
       auto neighbor = startPosition + direction;
       if (field.validPosition(neighbor) && field[neighbor] == type && !positions.contains(neighbor)) {
         collectPositions(neighbor, field);
@@ -63,7 +63,7 @@ int main() {
     for (auto& position : region.positions) {
       // Count up the sides, which either touch the field border or another type of field
       // The total number of these sides make up the perimeter
-      for (auto direction : Vector::AllDirections)  {
+      for (auto direction : Vector::AllDirections())  {
         auto neighbor = position + direction;
         if (!field.validPosition(neighbor) || field[neighbor] != region.type) {
           // This side is not touching another internal field 
