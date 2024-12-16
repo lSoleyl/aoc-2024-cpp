@@ -91,6 +91,17 @@ struct VectorT {
   // Performs a component wise compare and returns a result vector with -1,0,1 for each component
   VectorT compare(const VectorT& other) const { return (*this - other).apply([](int value) { return std::clamp(value, -1, 1); }); }
 
+
+  // returns a strong ordering value pased on component wise comparison where the column is compared first and only if the column
+  // is equal the row is compared. This establishes the column as a primary and more important dimension, which is why this isn't the default comparison.
+  std::strong_ordering compWiseOrdering(const VectorT& other) const {
+    auto result = (column <=> other.column);
+    if (result == std::strong_ordering::equal) {
+      result = row <=> other.row;
+    }
+    return result;
+  }
+
   bool operator==(const VectorT& other) const = default;
   bool operator!=(const VectorT& other) const = default;
   bool operator<(const VectorT& other) const { return column < other.column && row < other.row; }
