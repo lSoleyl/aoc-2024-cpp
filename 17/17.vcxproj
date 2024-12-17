@@ -146,6 +146,7 @@
     <ClCompile Include="17.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="disassembly.txt" />
     <Text Include="input.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

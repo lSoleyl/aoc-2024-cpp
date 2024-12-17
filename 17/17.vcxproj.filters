@@ -23,5 +23,8 @@
     <Text Include="input.txt">
       <Filter>Ressourcendateien</Filter>
     </Text>
+    <Text Include="disassembly.txt">
+      <Filter>Ressourcendateien</Filter>
+    </Text>
   </ItemGroup>
 </Project>
