@@ -95,23 +95,18 @@ struct VectorT {
   // Performs a component wise compare and returns a result vector with -1,0,1 for each component
   VectorT compare(const VectorT& other) const { return (*this - other).apply([](int value) { return std::clamp(value, -1, 1); }); }
 
+  bool operator==(const VectorT& other) const = default;
+  bool operator!=(const VectorT& other) const = default;
 
-  // returns a strong ordering value pased on component wise comparison where the column is compared first and only if the column
-  // is equal the row is compared. This establishes the column as a primary and more important dimension, which is why this isn't the default comparison.
-  std::strong_ordering compWiseOrdering(const VectorT& other) const {
-    auto result = (x <=> other.x);
+  // Vector ordering is defined in row major order, which makes it equal to offset ordering
+  // This ordering is only defined to enable sorting vectors and using them in std::set and std::map and has no further semantic meaning
+  std::strong_ordering operator<=>(const VectorT& other) const {
+    auto result = (y <=> other.y);
     if (result == std::strong_ordering::equal) {
-      result = y <=> other.y;
+      result = x <=> other.x;
     }
     return result;
   }
-
-  bool operator==(const VectorT& other) const = default;
-  bool operator!=(const VectorT& other) const = default;
-  bool operator<(const VectorT& other) const { return x < other.x && y < other.y; }
-  bool operator<=(const VectorT& other) const { return x <= other.x && y <= other.y; }
-  bool operator>(const VectorT& other) const { return x > other.x && y > other.y; }
-  bool operator>=(const VectorT& other) const { return x >= other.x && y >= other.y; }
 
   T x, y;
 };

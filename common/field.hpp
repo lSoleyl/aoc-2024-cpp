@@ -28,7 +28,7 @@ struct FieldT {
 
   template<typename Self>
   auto& operator[](this Self&& self, const Vector& pos) { return self.data[self.toOffset(pos)]; }
-  bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
+  bool validPosition(const Vector& pos) const { return pos.x >= 0 && pos.y >= 0 && pos.x < size.x && pos.y < size.y; }
   bool isAt(const Element& element, const Vector& pos) const { return validPosition(pos) && (*this)[pos] == element; }
 
   int toOffset(const Vector& pos) const { return pos.y * size.x + pos.x; }
@@ -57,7 +57,7 @@ struct FieldT {
 
     // We must use negate the condition due to the partial ordering of vectors
     bool operator==(sentinel) const { return !valid(); }
-    bool valid() const { return pos >= Vector(0, 0) && pos < field->size; }
+    bool valid() const { return field->validPosition(pos); }
 
     iterator& operator++() { pos += direction; return *this; }
     iterator operator++(int) { auto copy = *this; ++(*this); return copy; }

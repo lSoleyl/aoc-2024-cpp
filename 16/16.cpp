@@ -23,10 +23,10 @@ struct ExpandEntry {
   std::strong_ordering operator<=>(const ExpandEntry& other) const {
     auto result = cost <=> other.cost;
     if (result == std::strong_ordering::equal) {
-      result = position.compWiseOrdering(other.position);
+      result = position <=> other.position;
     }
     if (result == std::strong_ordering::equal) {
-      result = orientation.compWiseOrdering(other.orientation);
+      result = orientation <=> other.orientation;
     }
     return result;
   }
