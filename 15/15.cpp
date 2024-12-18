@@ -75,9 +75,9 @@ std::map<char, std::array<char, 2>> wideningMap = {
 
 
 struct WarehouseWide : public Warehouse {
-  WarehouseWide(const Warehouse& other) : Warehouse(other.size.column*2, other.size.row) {
+  WarehouseWide(const Warehouse& other) : Warehouse(other.size.x*2, other.size.y) {
     data.clear();
-    data.reserve(size.row * size.column);
+    data.reserve(size.y * size.x);
 
     // now copy the field data
     for (auto element : other.data) {
@@ -100,7 +100,7 @@ struct WarehouseWide : public Warehouse {
 
     // we need to treat horizontal and vertical movement differently...
     // because boxes are wider than they are tall
-    bool horizontal = (direction.column != 0);
+    bool horizontal = (direction.x != 0);
 
     if (horizontal) {
       // In horizontal direction we only need to try to move both box parts separately
@@ -159,7 +159,7 @@ int main() {
   int boxPosSum = 0;
   for (auto offset = warehouse.findOffset('O'); offset != std::numeric_limits<size_t>::max(); offset = warehouse.findOffset('O', offset+1)) {
     auto pos = warehouse.fromOffset(offset);
-    boxPosSum += pos.row * 100 + pos.column;
+    boxPosSum += pos.y * 100 + pos.x;
   }
 
 
@@ -170,7 +170,7 @@ int main() {
   int boxPosSum2 = 0;
   for (auto offset = wideHouse.findOffset('['); offset != std::numeric_limits<size_t>::max(); offset = wideHouse.findOffset('[', offset + 1)) {
     auto pos = wideHouse.fromOffset(offset);
-    boxPosSum2 += pos.row * 100 + pos.column;
+    boxPosSum2 += pos.y * 100 + pos.x;
   }
 
   auto t2 = std::chrono::high_resolution_clock::now();

@@ -15,7 +15,7 @@ const std::regex inputRegex("^p=([0-9]+),([0-9]+) v=(-?[0-9]+),(-?[0-9]+)$");
 const Vector FIELD_SIZE(101, 103);
 
 const Vector tlQuadrant(10, 10);
-const Vector trQuadrant(FIELD_SIZE.column - 10, 10);
+const Vector trQuadrant(FIELD_SIZE.x - 10, 10);
 
 struct Robot {
   Vector pos, velocity;
@@ -31,7 +31,7 @@ struct Robot {
 
   // Returns true if the pixel doesn't violate the possibility of being a christmas tree
   bool drawPos(HDC dc) {
-    SetPixel(dc, pos.column, pos.row, RGB(0, 200, 0));
+    SetPixel(dc, pos.x, pos.y, RGB(0, 200, 0));
     // not in topleft,topright miniquadrants (they should be empty for a tree)
     return pos.compare(tlQuadrant) != Vector(-1, -1) && pos.compare(trQuadrant) != Vector(1, -1);
   }
@@ -44,10 +44,10 @@ struct Robots : public std::vector<Robot> {
       std::smatch match;
       std::regex_match(line, match, inputRegex);
       Robot robot;
-      robot.pos.column = std::stoi(match[1].str());
-      robot.pos.row = std::stoi(match[2].str());
-      robot.velocity.column = std::stoi(match[3].str());
-      robot.velocity.row = std::stoi(match[4].str());
+      robot.pos.x = std::stoi(match[1].str());
+      robot.pos.y = std::stoi(match[2].str());
+      robot.velocity.x = std::stoi(match[3].str());
+      robot.velocity.y = std::stoi(match[4].str());
       push_back(robot);
     }
   }
@@ -97,7 +97,7 @@ int main() {
   std::unordered_map<Vector, int> quadrants;
   for (auto& robot : robots) {
     auto quadrantVec = robot.quadrantVec();
-    if (quadrantVec.column != 0 && quadrantVec.row != 0) { // not in the center
+    if (quadrantVec.x != 0 && quadrantVec.y != 0) { // not in the center
       ++quadrants[quadrantVec];
     }
   }
@@ -110,13 +110,13 @@ int main() {
   auto consoleDc = GetDC(consoleHwnd);
 
   HDC memDc = CreateCompatibleDC(consoleDc);
-  HBITMAP memBmp = CreateCompatibleBitmap(consoleDc, FIELD_SIZE.column, FIELD_SIZE.row);
+  HBITMAP memBmp = CreateCompatibleBitmap(consoleDc, FIELD_SIZE.x, FIELD_SIZE.y);
   SelectObject(memDc, memBmp);
   HBRUSH black = CreateSolidBrush(RGB(0, 0, 0));
   HBRUSH red = CreateSolidBrush(RGB(255, 0, 0));
   RECT rcField = { 0 };
-  rcField.right = FIELD_SIZE.column;
-  rcField.bottom = FIELD_SIZE.row;
+  rcField.right = FIELD_SIZE.x;
+  rcField.bottom = FIELD_SIZE.y;
 
 
   robots = robotsCopy;
@@ -138,14 +138,14 @@ int main() {
       // Fill robots
       bool couldBeTree = robots.draw(memDc);
       if (couldBeTree) {
-        RECT rcTLQ{ 0, 0, tlQuadrant.column, tlQuadrant.row };
+        RECT rcTLQ{ 0, 0, tlQuadrant.x, tlQuadrant.y };
         FrameRect(memDc, &rcTLQ, red);
-        RECT rcTRQ{ trQuadrant.column, 0, FIELD_SIZE.column, trQuadrant.row };
+        RECT rcTRQ{ trQuadrant.x, 0, FIELD_SIZE.x, trQuadrant.y };
         FrameRect(memDc, &rcTRQ, red);
       }
 
       // Copy to screen
-      StretchBlt(consoleDc, 10, 50, 400, 400, memDc, 0, 0, FIELD_SIZE.column, FIELD_SIZE.row, SRCCOPY);
+      StretchBlt(consoleDc, 10, 50, 400, 400, memDc, 0, 0, FIELD_SIZE.x, FIELD_SIZE.y, SRCCOPY);
 
       if (couldBeTree) {
         MessageBoxA(NULL, "Could be a Tree", "Info", MB_ICONINFORMATION);

@@ -21,8 +21,8 @@ struct FieldT {
       for (char ch : line) {
         data.emplace_back(ch); // Element must be constructible from a single char
       }
-      size.column = static_cast<int>(line.length());
-      ++size.row;
+      size.x = static_cast<int>(line.length());
+      ++size.y;
     }
   }
 
@@ -31,8 +31,8 @@ struct FieldT {
   bool validPosition(const Vector& pos) const { return pos >= Vector(0, 0) && pos < size; }
   bool isAt(const Element& element, const Vector& pos) const { return validPosition(pos) && (*this)[pos] == element; }
 
-  int toOffset(const Vector& pos) const { return pos.row * size.column + pos.column; }
-  Vector fromOffset(size_t offset) const { return Vector(offset % size.column, offset / size.column); }
+  int toOffset(const Vector& pos) const { return pos.y * size.x + pos.x; }
+  Vector fromOffset(size_t offset) const { return Vector(offset % size.x, offset / size.x); }
   size_t findOffset(const Element& element, size_t startOffset = 0) const {
     auto pos = std::find(data.begin() + startOffset, data.end(), element);
     return pos != data.end() ? std::distance(data.begin(), pos) : std::numeric_limits<size_t>::max();
@@ -61,7 +61,7 @@ struct FieldT {
 
     iterator& operator++() { pos += direction; return *this; }
     iterator operator++(int) { auto copy = *this; ++(*this); return copy; }
-    Element& operator*() const { return field->data[pos.row * field->size.column + pos.column]; }
+    Element& operator*() const { return field->data[pos.y * field->size.x + pos.x]; }
 
     Vector pos, direction;
     FieldT* field;
@@ -81,9 +81,9 @@ using Field = FieldT<char>;
 
 template<typename Element>
 std::ostream& operator<<(std::ostream& out, FieldT<Element>& field) {
-  for (int row = 0; row < field.size.row; ++row) {
-    for (int column = 0; column < field.size.column; ++column) {
-      out << field[Vector(column, row)];
+  for (int y = 0; y < field.size.y; ++y) {
+    for (int x = 0; x < field.size.x; ++x) {
+      out << field[Vector(x, y)];
     }
     out << "\n";
   }

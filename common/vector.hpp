@@ -16,7 +16,7 @@ namespace {
 
 template<typename T>
 struct VectorT {
-  VectorT(T column = 0, T row = 0) : column(column), row(row) {}
+  VectorT(T x = 0, T y = 0) : x(x), y(y) {}
 
   // We sadly cannot assign the values here or use constexpr, because the class is "incomplete" at this time
   static const VectorT Zero;
@@ -30,67 +30,67 @@ struct VectorT {
     return directions;
   }
 
-  VectorT operator+(const VectorT& other) const { return VectorT(column + other.column, row + other.row); }
+  VectorT operator+(const VectorT& other) const { return VectorT(x + other.x, y + other.y); }
   VectorT& operator+=(const VectorT& other) {
-    column += other.column;
-    row += other.row;
+    x += other.x;
+    y += other.y;
     return *this;
   }
 
-  VectorT operator-(const VectorT& other) const { return VectorT(column - other.column, row - other.row); }
+  VectorT operator-(const VectorT& other) const { return VectorT(x - other.x, y - other.y); }
   VectorT& operator-=(const VectorT& other) {
-    column -= other.column;
-    row -= other.row;
+    x -= other.x;
+    y -= other.y;
     return *this;
   }
 
   // Important: the following operation performs integer division!
-  VectorT operator/(T divisor) const { return VectorT(column / divisor, row / divisor); }
+  VectorT operator/(T divisor) const { return VectorT(x / divisor, y / divisor); }
   VectorT& operator/(T divisor) {
-    column /= divisor;
-    row /= divisor;
+    x /= divisor;
+    y /= divisor;
     return *this;
   }
-  VectorT operator*(T factor) const { return VectorT(column * factor, row * factor); }
+  VectorT operator*(T factor) const { return VectorT(x * factor, y * factor); }
   VectorT& operator*=(T factor) {
-    column *= factor;
-    row *= factor;
+    x *= factor;
+    y *= factor;
     return *this;
   }
 
-  VectorT operator%(T divisor) const { return VectorT(column % divisor, row % divisor); }
+  VectorT operator%(T divisor) const { return VectorT(x % divisor, y % divisor); }
   VectorT& operator%=(T divisor) {
-    column %= divisor;
-    row %= divisor;
+    x %= divisor;
+    y %= divisor;
     return *this;
   }
 
   // element wise modulo
-  VectorT operator%(const VectorT& other) const { return VectorT(column % other.column, row % other.row); }
+  VectorT operator%(const VectorT& other) const { return VectorT(x % other.x, y % other.y); }
   VectorT& operator%=(const VectorT& other) {
-    column %= other.column;
-    row %= other.row;
+    x %= other.x;
+    y %= other.y;
     return *this;
   }
 
   // positive modulo
-  VectorT pMod(T divisor) const { return VectorT(::pMod(column, divisor), ::pMod(row, divisor)); }
+  VectorT pMod(T divisor) const { return VectorT(::pMod(x, divisor), ::pMod(y, divisor)); }
 
   // element wise positive modulo
-  VectorT pMod(const VectorT& other) const { return VectorT(::pMod(column, other.column), ::pMod(row, other.row)); }
+  VectorT pMod(const VectorT& other) const { return VectorT(::pMod(x, other.x), ::pMod(y, other.y)); }
 
 
   VectorT rotateCW() const {
-    return VectorT(-row, column); //rotated by 90° clockwise
+    return VectorT(-y, x); //rotated by 90° clockwise
   }
 
   VectorT rotateCCW() const {
-    return VectorT(row, -column); //rotate by 90° counter clockwise
+    return VectorT(y, -x); //rotate by 90° counter clockwise
   }
 
   // Apply given functor to each component and return the result
   template<typename MapFn>
-  VectorT apply(MapFn mapFn) const { return VectorT(mapFn(column), mapFn(row)); }
+  VectorT apply(MapFn mapFn) const { return VectorT(mapFn(x), mapFn(y)); }
 
   // Performs a component wise compare and returns a result vector with -1,0,1 for each component
   VectorT compare(const VectorT& other) const { return (*this - other).apply([](int value) { return std::clamp(value, -1, 1); }); }
@@ -99,21 +99,21 @@ struct VectorT {
   // returns a strong ordering value pased on component wise comparison where the column is compared first and only if the column
   // is equal the row is compared. This establishes the column as a primary and more important dimension, which is why this isn't the default comparison.
   std::strong_ordering compWiseOrdering(const VectorT& other) const {
-    auto result = (column <=> other.column);
+    auto result = (x <=> other.x);
     if (result == std::strong_ordering::equal) {
-      result = row <=> other.row;
+      result = y <=> other.y;
     }
     return result;
   }
 
   bool operator==(const VectorT& other) const = default;
   bool operator!=(const VectorT& other) const = default;
-  bool operator<(const VectorT& other) const { return column < other.column && row < other.row; }
-  bool operator<=(const VectorT& other) const { return column <= other.column && row <= other.row; }
-  bool operator>(const VectorT& other) const { return column > other.column && row > other.row; }
-  bool operator>=(const VectorT& other) const { return column >= other.column && row >= other.row; }
+  bool operator<(const VectorT& other) const { return x < other.x && y < other.y; }
+  bool operator<=(const VectorT& other) const { return x <= other.x && y <= other.y; }
+  bool operator>(const VectorT& other) const { return x > other.x && y > other.y; }
+  bool operator>=(const VectorT& other) const { return x >= other.x && y >= other.y; }
 
-  T column, row;
+  T x, y;
 };
 
 template<typename T>
@@ -130,13 +130,13 @@ template<typename T> const VectorT<T> VectorT<T>::Left(-1, 0);
 namespace std {
   template<typename T>
   struct hash<VectorT<T>> {
-    size_t operator()(const VectorT<T>& vec) const { return ((vec.row << 16) ^ vec.column); }
+    size_t operator()(const VectorT<T>& vec) const { return ((vec.y << 16) ^ vec.x); }
   };
 }
 
 template<typename T>
 std::ostream& operator<<(std::ostream& out, const VectorT<T>& v) {
-  return out << "(" << v.column << "," << v.row << ")";
+  return out << "(" << v.x << "," << v.y << ")";
 }
 
 using Vector = VectorT<int>;

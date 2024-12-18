@@ -20,12 +20,12 @@ struct Game {
   VectorT<int64_t> prize; 
 
   int64_t countCost(Vector position = Vector::Zero, int currentCost = 0, int currentButtons = 0) const {
-    auto term1 = A.column * prize.row - A.row * prize.column;
-    auto term2 = A.column * B.row - A.row * B.column;
+    auto term1 = A.x * prize.y - A.y * prize.x;
+    auto term2 = A.x * B.y - A.y * B.x;
 
     // by performing the integer division last we ensure that there is no hidden truncation mid way in the calculation
     auto b = term1 / term2;
-    auto a = (prize.column - b * B.column) / A.column;
+    auto a = (prize.x - b * B.x) / A.x;
 
     return (a >= 0 && b >= 0 && a * A + b * B == prize) ? (a * A.cost + b * B.cost) : 0;
   }
@@ -38,20 +38,20 @@ struct Games : public std::vector<Game> {
       Game game;
       std::smatch results;
       std::regex_match(line, results, buttonRegex);
-      game.A.column = std::stoi(results.str(1));
-      game.A.row = std::stoi(results.str(2));
+      game.A.x = std::stoi(results.str(1));
+      game.A.y = std::stoi(results.str(2));
       game.A.cost = 3;
       
       std::getline(stream, line);
       std::regex_match(line, results, buttonRegex);
-      game.B.column = std::stoi(results.str(1));
-      game.B.row = std::stoi(results.str(2));
+      game.B.x = std::stoi(results.str(1));
+      game.B.y = std::stoi(results.str(2));
       game.B.cost = 1;
 
       std::getline(stream, line);
       std::regex_match(line, results, prizeRegex);
-      game.prize.column = std::stoi(results.str(1));
-      game.prize.row = std::stoi(results.str(2));
+      game.prize.x = std::stoi(results.str(1));
+      game.prize.y = std::stoi(results.str(2));
       push_back(game);
 
       std::getline(stream, line); // read empty follow line
