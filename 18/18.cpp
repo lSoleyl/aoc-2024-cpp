@@ -38,7 +38,7 @@ struct MemorySpace : public Field {
   }
 
   // Part 1
-  int findPath() {
+  std::set<Vector> findPath() {
     const Vector from = topLeft();
     const Vector to = bottomRight();
 
@@ -56,8 +56,8 @@ struct MemorySpace : public Field {
       }
 
       if (entry.position == to) {
-        // We are expanding the end tile -> we are done
-        return entry.cost;
+        // We are expanding the end tile -> we are done expanding
+        break;
       }
 
       // We have 4 paths to expand one in each direction
@@ -70,7 +70,30 @@ struct MemorySpace : public Field {
       }
     }
 
-    return -1; // no path found
+    // Now greedily collect ONE cheapest path
+    std::set<Vector> path;
+    
+    if (costMap.find(to) == costMap.end()) {
+      return path; // no path found -> return empty set to signal this
+    }
+    
+    int cost = getCost(to);
+    for (Vector pos = to; pos != from; ) {
+      path.insert(pos);
+
+      for (auto direction : Vector::AllDirections()) {
+        auto prevPos = pos + direction;
+        auto prevCost = getCost(prevPos);
+        if (prevCost < cost) {
+          cost = prevCost;
+          pos = prevPos;
+          break; // found the next step in the cheapest path
+        }
+      }
+    }
+
+    path.insert(from);
+    return path;
   }
 
   
@@ -113,17 +136,27 @@ int main()
   for (int i = 0; i < 1024; ++i) {
     memSpace[memSpace.bytePositions[i]] = '#';
   }
-  int minCost = memSpace.findPath();
+  auto minPath = memSpace.findPath();
+  auto minCost = minPath.size();
 
 
-  // Part 2: Brute force takes ~ 3s
+  // Part 2: Brute force of simply performing dijskstra after each change takes ~ 3s
+  //         The smarter algorithm below will calculate the shortest path and only 
+  //         recalculate the path if a byte falls onto that shortest path to verify that
+  //         a shortest path still exists. This approach takes 60ms
 
   Vector bytePos;
   for (int i = 1024; i < memSpace.bytePositions.size(); ++i) {
     bytePos = memSpace.bytePositions[i];
     memSpace[bytePos] = '#';
-    if (memSpace.findPath() == -1) {
-      break;
+
+    if (minPath.contains(bytePos)) {
+      // The byte fell into the current minimal path -> recalculate the minimal path
+      // to ensure it still exists
+      minPath = memSpace.findPath();
+      if (minPath.empty()) {
+        break; // no path found!
+      }
     }
   }
 
