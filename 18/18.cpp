@@ -38,8 +38,12 @@ struct MemorySpace : public Field {
   }
 
   // Part 1
-  int findPath(Vector from, Vector to) {
+  int findPath() {
+    const Vector from = topLeft();
+    const Vector to = bottomRight();
+
     // simple dijkstra
+    costMap.clear();
     std::set<ExpandEntry> expandList = { {from, 0} };
     while (!expandList.empty()) {
       auto entry = *expandList.begin();
@@ -104,14 +108,28 @@ int main()
   auto t1 = std::chrono::high_resolution_clock::now();
 
   MemorySpace memSpace(std::ifstream("input.txt"));
+
+  // Part 1
   for (int i = 0; i < 1024; ++i) {
     memSpace[memSpace.bytePositions[i]] = '#';
   }
+  int minCost = memSpace.findPath();
 
-  int minCost = memSpace.findPath(memSpace.topLeft(), memSpace.bottomRight());
+
+  // Part 2: Brute force takes ~ 3s
+
+  Vector bytePos;
+  for (int i = 1024; i < memSpace.bytePositions.size(); ++i) {
+    bytePos = memSpace.bytePositions[i];
+    memSpace[bytePos] = '#';
+    if (memSpace.findPath() == -1) {
+      break;
+    }
+  }
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
   std::cout << "Part1: " << minCost << "\n"; // 290
+  std::cout << "Part2: " << bytePos << "\n"; // 64,54
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
