@@ -37,6 +37,11 @@ struct FieldT {
     auto pos = std::find(data.begin() + startOffset, data.end(), element);
     return pos != data.end() ? std::distance(data.begin(), pos) : std::numeric_limits<size_t>::max();
   }
+  
+  Vector topLeft() const { return Vector(0, 0); }
+  Vector topRight() const { return Vector(size.x - 1, 0); }
+  Vector bottomLeft() const { return Vector(0, size.y - 1); }
+  Vector bottomRight() const { return size - Vector(1, 1); }
 
 
   struct iterator {
