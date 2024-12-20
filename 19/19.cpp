@@ -101,6 +101,6 @@ int main() {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "Part 1: " << towelCount << "\n"; // 269
-  std::cout << "Part 2: " << allOptions << "\n";
+  std::cout << "Part 2: " << allOptions << "\n"; // 758839075658876
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
