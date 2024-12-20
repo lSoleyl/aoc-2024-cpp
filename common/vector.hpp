@@ -88,6 +88,11 @@ struct VectorT {
     return VectorT(y, -x); //rotate by 90° counter clockwise
   }
 
+  // Calculate the number of single steps needed to reach other from this vector
+  auto stepDistance(const VectorT& other) const {
+    return std::abs(x - other.x) + std::abs(y - other.y);
+  }
+
   // Apply given functor to each component and return the result
   template<typename MapFn>
   VectorT apply(MapFn mapFn) const { return VectorT(mapFn(x), mapFn(y)); }
