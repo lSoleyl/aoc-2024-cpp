@@ -1,9 +1,6 @@
 #include <fstream>
 #include <iostream>
 #include <chrono>
-#include <ranges>
-#include <algorithm>
-#include <numeric>
 #include <vector>
 #include <unordered_map>
 
@@ -26,8 +23,10 @@ Keypad controls = {
 };
 
 
-// We can statically precalculate the cost of pressing a button in a later number pad, because
-// we can use the fact that the earlier pads will always confirm each press with an 'A' and thus start and end at an 'A'
+// We can statically precalculate the cost of moving the cursor from a given position `from` to any
+// other position on the number pad `to` and then pressing 'A'. All we need to calculate that is the cost map of
+// the next lower level, because after entering any button on the top level (the number pad) all lower level pads
+// MUST be positioned at the 'A' button.
 using CostMap = std::unordered_map<std::pair<Vector/*from*/, Vector/*to*/>, int64_t/*buttonpresses*/>;
 
 
@@ -38,7 +37,8 @@ struct KeypadState {
       if (fromButton != ' ') {
         for (auto& [toButton, toPos] : keypad) {
           if (toButton != ' ') {
-            costMap.insert({ {fromPos, toPos}, 1});
+            // pressing any button on the very first (user controlled) control panel has a cost of 1 button press
+            costMap.insert({ {fromPos, toPos}, 1}); 
           }
         }
       }
@@ -50,8 +50,9 @@ struct KeypadState {
   }
 
 
-  // This will build up the precalculated cost map for each button
+  // This will build up the precalculated cost map for each combination of button positions (from,to)
   void deriveCostMap() {
+    // The lower level input always starts at the 'A' button
     auto lowerLevelStartPos = prevKeypad->keypad.at('A');
     auto& lowerLevelCostMap = prevKeypad->costMap;
 
@@ -76,17 +77,14 @@ struct KeypadState {
     auto minCosts = std::numeric_limits<int64_t>::max();
 
     // Try to go in each direction, which reduces the step distance to the target
-    //for (auto direction : Vector::AllDirections()) {
-    for (auto direction : {Vector::Right, Vector::Up, Vector::Down, Vector::Left }) {
+    for (auto direction : Vector::AllDirections()) {
       auto nextPos = from + direction;
       if (nextPos.stepDistance(to) < from.stepDistance(to) && nextPos != forbidden) {
         // This step brings us closer to the target
         auto nextLowerLevelPos = prevKeypad->keypad.at(direction.toChar()); // where we move on the next lower level
-        auto stepEntry = prevKeypad->costMap.at({posLowerLevel, nextLowerLevelPos }); // get cost move performing this move on the lower level
-        auto costEntry = getLowestPathCost(nextPos, to, nextLowerLevelPos);
-        if (stepEntry + costEntry < minCosts) {
-          minCosts = stepEntry + costEntry;
-        }
+        auto stepCost = prevKeypad->costMap.at({posLowerLevel, nextLowerLevelPos }); // get cost of performing this move on the lower level
+        auto restPathCost = getLowestPathCost(nextPos, to, nextLowerLevelPos); // cost of the rest of the path to 'to'
+        minCosts = std::min(minCosts, stepCost + restPathCost);
       }
     }
 
@@ -96,17 +94,16 @@ struct KeypadState {
 
 
   int64_t getSequenceCost(const std::string& sequence) const {
-
     int64_t buttonPresses = 0;
 
     auto position = keypad.at('A'); // we start input of each sequence with the robot arm at 'A'
     for (auto button : sequence) {
       auto buttonPos = keypad.at(button);
-      buttonPresses += costMap.at({ position, buttonPos });
+      buttonPresses += costMap.at({ position, buttonPos }); // add costs to get from position to buttonPos
       position = buttonPos; // update position
     }
 
-    // Calculate sequence cost as the numeric value times the number of button presses required
+    // Calculate sequence cost as the numeric value times the number of button presses required (std::stoi() will correctly ignore the trailing 'A')
     return std::stoi(sequence) * buttonPresses;
   }
 
@@ -122,39 +119,19 @@ struct KeypadState {
 struct RobotControl {
   RobotControl(std::istream&& input) : sequences(std::istream_iterator<std::string>(input), std::istream_iterator<std::string>()) {}
 
-  auto countSequenceComplexities() const {
-    
-    // List of control pads in reverse order
-    std::list<KeypadState> controlPads = { controls }; // user controlled
-    controlPads.push_front({ controls, controlPads.front() }); // robot controlled
-    controlPads.push_front({ controls, controlPads.front() }); // robot controlled
-    
-    KeypadState numberPad = { numbers, controlPads.front() }; // robot controlled (don't calculate the costs here)
-
-    int64_t totalComplexity = 0;
-
-    // Now go through each sequence
-    for (auto& sequence : sequences) {
-      totalComplexity += numberPad.getSequenceCost(sequence);
-    }
-
-    return totalComplexity;
-  }
-
-  auto countSequenceComplexities2() const {
+  auto countSequenceComplexities(int directionalRobotKeypads) const {
 
     // List of control pads in reverse order
     std::list<KeypadState> controlPads = { controls }; // user controlled
 
-    for (int i = 0; i < 25; ++i) {
+    for (int i = 0; i < directionalRobotKeypads; ++i) {
       controlPads.push_front({ controls, controlPads.front() }); // robot controlled
     }
     
-    KeypadState numberPad = { numbers, controlPads.front() }; // robot controlled (don't calculate the costs here)
+    KeypadState numberPad = { numbers, controlPads.front() }; // robot controlled number pad
 
+    // Now go through each sequence and add up the complexity costs
     int64_t totalComplexity = 0;
-
-    // Now go through each sequence
     for (auto& sequence : sequences) {
       totalComplexity += numberPad.getSequenceCost(sequence);
     }
@@ -170,8 +147,8 @@ int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
   RobotControl control(std::ifstream("input.txt"));
-  auto complexities = control.countSequenceComplexities();
-  auto complexities2 = control.countSequenceComplexities2();
+  auto complexities = control.countSequenceComplexities(2);
+  auto complexities2 = control.countSequenceComplexities(25);
 
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "Part 1: " << complexities << "\n"; // 270084
