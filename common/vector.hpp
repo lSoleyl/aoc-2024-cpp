@@ -88,6 +88,30 @@ struct VectorT {
     return VectorT(y, -x); //rotate by 90° counter clockwise
   }
 
+  // Converts a direction vector to a character representing this direction or '0'´ for no direction.
+  char toChar() const {
+    if (*this == VectorT::Zero) return '0';
+    if (*this == VectorT::Left) return '<';
+    if (*this == VectorT::Up) return '^';
+    if (*this == VectorT::Right) return '>';
+    if (*this == VectorT::Down) return 'v';
+    throw std::exception("not a direction vector");
+    return '?';
+  }
+
+  // Converts a direction char into a vector (inverse of 'toChar()'). Will throw an exception if an unsupported direction is passed.
+  static VectorT fromChar(char ch) {
+    switch (ch) {
+      case '0': return VectorT::Zero;
+      case '<': return VectorT::Left;
+      case '^': return VectorT::Up;
+      case '>': return VectorT::Right;
+      case 'v': return VectorT::Down;
+    }
+    throw std::exception("not a valid direction char");
+    return VectorT::Zero;
+  }
+
   // Calculate the number of single steps needed to reach other from this vector
   auto stepDistance(const VectorT& other) const {
     return std::abs(x - other.x) + std::abs(y - other.y);
