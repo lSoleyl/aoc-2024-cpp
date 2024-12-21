@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 #include <common/vector.hpp>
-
+#include <common/hash.hpp>
 
 
 using Keypad = std::unordered_map<char/*key*/, Vector/*pos*/>;
@@ -28,56 +28,49 @@ Keypad controls = {
 
 // We can statically precalculate the cost of pressing a button in a later number pad, because
 // we can use the fact that the earlier pads will always confirm each press with an 'A' and thus start and end at an 'A'
-using CostMap = std::unordered_map<char/*button*/, std::pair<int/*buttonPresses*/, std::string/*buttonSequence*/>>;
-
-
-
+using CostMap = std::unordered_map<std::pair<Vector/*from*/, Vector/*to*/>, std::pair<int/*buttonPresses*/, std::string/*buttonSequence*/>>;
 
 
 struct KeypadState {
   KeypadState(const Keypad& keypad) : keypad(keypad), forbidden(keypad.at(' ')) {
     // For the very first keypad each button is one button press
-    for (auto& [button, pos] : keypad) {
-      if (button != ' ') {
-        costMap.insert({ button, { 1, std::string(1, button) }});
-        inverseKeypad.insert({ pos, button });
+    for (auto& [fromButton, fromPos] : keypad) {
+      if (fromButton != ' ') {
+        for (auto& [toButton, toPos] : keypad) {
+          if (toButton != ' ') {
+            costMap.insert({ {fromPos, toPos}, {1, std::string(1, toButton) }});
+          }
+        }
       }
     }
   }
 
   KeypadState(const Keypad& keypad, const KeypadState& previousKeypad) : keypad(keypad), forbidden(keypad.at(' ')), prevKeypad(&previousKeypad) {
-    deriveCostMap(previousKeypad.costMap);
-    for (auto& [button, pos] : keypad) {
-      if (button != ' ') {
-        inverseKeypad.insert({ pos, button });
-      }
-    }
+    deriveCostMap();
   }
 
 
   // This will build up the precalculated cost map for each button
-  void deriveCostMap(const CostMap& earlierKeypadCostMap) {
-    const auto startPosition = keypad.at('A');
-    for (auto& [key, position] : keypad) {
-      if (key == 'A') {
-        // For the start button we don't need to navigate there and back, so it is only the press itself
-        costMap[key] = earlierKeypadCostMap.at('A');
+  void deriveCostMap() {
+    auto lowerLevelStartPos = prevKeypad->keypad.at('A');
+    auto& lowerLevelCostMap = prevKeypad->costMap;
 
-      } else if (key != ' ') {
-        // We need to navigate to the position, confirm it by pressing 'A', then navigate back to 'A' and confirm it by pressing 'A'
-        auto part1 = getLowestPathCost(startPosition, position, earlierKeypadCostMap);
-        // Now we need to navigate back to the 'A' button to confirm this button press
-        auto part2 = getLowestPathCost(position, startPosition, earlierKeypadCostMap);
-        auto aCost = earlierKeypadCostMap.at('A');
-        costMap[key] = { part1.first + aCost.first + part2.first + aCost.first, part1.second + aCost.second + part2.second + aCost.second };
+    for (auto& [fromKey, fromPos] : keypad) {
+      if (fromKey != ' ') {
+        for (auto& [toKey, toPos] : keypad) {
+          if (toKey != ' ') {
+            costMap.insert({{ fromPos, toPos }, getLowestPathCost(fromPos, toPos, lowerLevelStartPos)});
+          }
+        }
       }
     }
   }
 
 
-  std::pair<int, std::string> getLowestPathCost(Vector from, Vector to, const CostMap& costs) const {
+  std::pair<int, std::string> getLowestPathCost(Vector from, Vector to, Vector posLowerLevel) const {
     if (from == to) {
-      return { 0, "" }; // on the last level we don't need to press 'A', so don't include it here, we will include it into the cost map though
+      // The costs are the costs to press the 'A' button on the lower level
+      return prevKeypad->costMap.at({ posLowerLevel, prevKeypad->keypad.at('A') });
     }
 
     std::pair<int, std::string> minCosts = { std::numeric_limits<int>::max(), "???" };
@@ -88,8 +81,9 @@ struct KeypadState {
       auto nextPos = from + direction;
       if (nextPos.stepDistance(to) < from.stepDistance(to) && nextPos != forbidden) {
         // This step brings us closer to the target
-        auto stepEntry = costs.at(direction.toChar());
-        auto costEntry = getLowestPathCost(nextPos, to, costs);
+        auto nextLowerLevelPos = prevKeypad->keypad.at(direction.toChar()); // where we move on the next lower level
+        auto stepEntry = prevKeypad->costMap.at({posLowerLevel, nextLowerLevelPos }); // get cost move performing this move on the lower level
+        auto costEntry = getLowestPathCost(nextPos, to, nextLowerLevelPos);
         if (stepEntry.first + costEntry.first < minCosts.first) {
           minCosts = { stepEntry.first + costEntry.first, stepEntry.second + costEntry.second };
         }
@@ -111,7 +105,7 @@ struct KeypadState {
     for (auto button : sequence) {
       auto buttonPos = keypad.at(button);
 
-      auto costEntry = getLowestPathCost(position, buttonPos, costMap);
+      auto costEntry = costMap.at({ position, buttonPos });
       std::cout << costEntry.second << ' ';
 
       buttonPresses += costEntry.first;
@@ -127,7 +121,6 @@ struct KeypadState {
 
 
   const Keypad& keypad;
-  std::unordered_map<Vector/*pos*/, char/*button*/> inverseKeypad;
   const Vector forbidden;
   const KeypadState* prevKeypad = nullptr;
   CostMap costMap; // transitive button press cost map
@@ -142,11 +135,9 @@ struct RobotControl {
     // List of control pads in reverse order
     std::list<KeypadState> controlPads = { controls }; // user controlled
     controlPads.push_front({ controls, controlPads.front() }); // robot controlled
-    //controlPads.push_front({ controls, controlPads.front() }); // robot controlled
+    controlPads.push_front({ controls, controlPads.front() }); // robot controlled
     
-    KeypadState numberPad = { numbers }; // robot controlled (don't calculate the costs here)
-    numberPad.costMap = controlPads.front().costMap; // the number pad uses the cost map of the last control pad
-
+    KeypadState numberPad = { numbers, controlPads.front() }; // robot controlled (don't calculate the costs here)
 
     int totalComplexity = 0;
 
@@ -165,10 +156,10 @@ struct RobotControl {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  RobotControl control(std::ifstream("sample.txt"));
+  RobotControl control(std::ifstream("input.txt"));
   auto complexities = control.countSequenceComplexities();
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << complexities << "\n";
+  std::cout << "Part 1: " << complexities << "\n"; // 270084
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
