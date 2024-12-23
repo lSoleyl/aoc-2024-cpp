@@ -47,6 +47,10 @@ namespace stream {
 
       std::istream& inputStream;
     };
+
+
+    struct DefaultSeparator {};
+    std::ostream& operator<<(std::ostream& out, DefaultSeparator) { return out << ','; }
   }
 
   /** Utility function to simply iterate over all lines of a stream/file
@@ -54,4 +58,26 @@ namespace stream {
   auto lines(std::istream& inputStream) {
     return impl::Lines(inputStream);
   }
+
+  template<typename Rng, typename Sep = impl::DefaultSeparator, typename Proj = std::identity>
+  std::ostream& joinInto(std::ostream& out, Rng&& range, Sep&& separator = {}, Proj projection = {}) {
+    auto it = std::begin(range);
+    auto end = std::end(range);
+    while (it != end) {
+      out << projection(*it);
+      if (++it != end) {
+        out << separator;
+      }
+    }
+
+    return out;
+  }
+
+  template<typename Rng, typename Sep = impl::DefaultSeparator, typename Proj = std::identity>
+  std::string join(Rng&& range, Sep&& separator = {}, Proj projection = {}) {
+    std::ostringstream out;
+    joinInto(out, std::forward<Rng>(range), std::forward<Sep>(separator), projection);
+    return out.str();
+  }
+
 }

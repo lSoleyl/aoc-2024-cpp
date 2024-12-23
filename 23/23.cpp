@@ -33,7 +33,30 @@ struct Computer {
     }
   }
 
- 
+  void collectLargestGroup(std::unordered_set<Computer*>& largestGroup, std::unordered_set<Computer*> currentGroup) {
+    for (auto connection : connections) {
+      if (connection->id > id) {
+        // Only check connections in ascending alphabetical order to avoid checking each group in every possible ordering.
+        // This single check reduces the execution time from ~78h down to ~380ms (!!!)
+
+        // only follow the connection if it is not part of the current set of computers
+        // AND all computers from the current group have a connection to that computer
+        if (!currentGroup.contains(connection) && std::ranges::all_of(currentGroup, [=](Computer* other) { return other->connections.contains(connection); })) {
+          auto extendedGroup = currentGroup;
+          extendedGroup.insert(connection);
+          if (extendedGroup.size() > largestGroup.size()) {
+            // found the target set size -> enter into result set
+            largestGroup = extendedGroup;
+          } 
+          
+          // find next connection starting from the connected to computer
+          connection->collectLargestGroup(largestGroup, extendedGroup);
+        }
+      }
+    }
+  }
+
+
   std::string id;
   std::set<Computer*> connections;
 };
@@ -72,7 +95,17 @@ struct Network {
   }
 
 
+  std::string findLargestGroup() {
+    std::unordered_set<Computer*> largestGroup;
 
+    for (auto& [id, computer] : computers) {
+      computer.collectLargestGroup(largestGroup, { &computer });
+    }
+
+    auto idList = largestGroup | std::views::transform([](Computer* c) { return c->id; }) | std::ranges::to<std::vector>();
+    std::ranges::sort(idList);
+    return stream::join(idList);
+  }
 
 
   std::unordered_map<std::string/*id*/, Computer> computers;
@@ -87,10 +120,11 @@ int main() {
   Network network(std::ifstream("input.txt"));
 
   auto groupCount = network.countComputerGroups();
-
+  auto largestGroup = network.findLargestGroup();
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "Part 1: " << groupCount << "\n"; // 1253
+  std::cout << "Part 2: " << largestGroup << "\n"; // ag,bt,cq,da,hp,hs,mi,pa,qd,qe,qi,ri,uq
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
