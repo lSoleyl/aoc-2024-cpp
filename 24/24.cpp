@@ -6,11 +6,13 @@
 #include <ranges>
 #include <regex>
 #include <algorithm>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <optional>
 
 #include <common/stream.hpp>
+#include <common/hash.hpp>
 
 struct Component {
   Component(std::optional<bool> value = {}) : value(value) {}
@@ -67,6 +69,8 @@ struct Gate final : public Component {
     return "???";
   }
 
+  Wire* getOtherInput(Wire* input) const { return input == inputA ? inputB : inputA; }
+
   Wire* inputA;
   Wire* inputB;
   Operation op;
@@ -74,38 +78,6 @@ struct Gate final : public Component {
 };
 
 bool Wire::calcValue() { return input->getValue(); }
-
-
-
-
-std::unordered_set<std::string> printedDefinitions;
-
-std::ostream& operator<<(std::ostream& out, const Gate& gate);
-std::ostream& operator<<(std::ostream& out, const Wire& wire) {
-  if (printedDefinitions.insert(wire.id).second && wire.input) {
-    // first time printing definition
-    // -> first print all the inputs (if not already done)
-    out << *wire.input->inputA; // print definition of the input wires to the gate first
-    out << *wire.input->inputB; // print definition of the input wires to the gate first
-    // now print the definition for this wire
-    out << wire.id << " = " << wire.input->inputA->id << ' ' << wire.input->opId() << ' ' << wire.input->inputB->id << "\n";
-  }
-
-  #if 0
-  if (wire.input) {
-    out << '(' << wire.id << " = " << *wire.input << ')';
-  } else {
-    out << wire.id;
-  }
-  #endif
-  return out;
-}
-
-
-std::ostream& operator<<(std::ostream& out, const Gate& gate) {
-  return out << gate.inputA << gate.opId() << gate.inputB;
-}
-
 
 const std::unordered_map<std::string/*id*/, Operation> opMap = {
   { "AND", AND },
@@ -167,126 +139,229 @@ struct Network {
     return result;
   }
 
-  enum class Role { InputA, InputB, Carry, Output };
+  /** A tag, which will be assigned to wires similar to symbols. They are derived from the gate 
+   *  connections and the predefined input and output wires
+   */
+  struct Tag {
+    friend std::ostream& operator<<(std::ostream&, Tag);
 
-  void fixAdder() {
-
+    enum Type : uint8_t {
+      Invalid, // invalid tag returned by get for not set tag
+      X, Y, // Input bit
+      R, // r[i] = x[i] XOR y[i] - Only for i > 0
+      Z, // z[0] = x[0] XOR y[0] - Output bit
+      // z[i] = r[i] XOR c[i-1]
+      S, // s[i] = x[i] AND y[i]
+      T, // t[i] = r[i] AND c[i-1]
+      C  // c[i] = s[i] OR t[i] - Carry bit
+    };
     
+    explicit operator bool() const { return type != Tag::Invalid; }
+    bool operator==(const Tag& other) const = default;
+    bool operator!=(const Tag& other) const = default;
+    auto operator<=>(const Tag& other) const = default;
+
+    Type type;
+    uint8_t bit;
+  };
 
 
-    // From printing it out we have following construction used:
-    // zN = xN ^ yN ^ cN-1
-    // cN = (yN AND xN) OR (cN-1 AND (yN XOR xN))
+  struct TagResult {
+    TagResult(std::unordered_map<std::string/*id*/, Wire>& wireMap) {
+      for (auto& [id, wire] : wireMap) {
+        untagged.insert(&wire);
+      }
+    }
+
+    std::map<Tag, Wire*> fromTag; // cannot use unordered, because we cannot define std::hash<Tag> before it is being needed
+    std::unordered_map<Wire*, Tag> tags;
+    std::unordered_set<Wire*> untagged;
+    std::unordered_set<Wire*> conflictingTags; // Two different tags assigned to the same wire
+    std::unordered_set<Wire*> duplicateTags; // Same tag assigned to multiple wires
+
+    void set(Wire& wire, Tag::Type type, uint8_t bit) { set(&wire, Tag{ type, bit }); }
+    void set(Wire* wire, Tag::Type type, uint8_t bit) { set(wire, Tag{ type, bit }); }
+    void set(Wire& wire, Tag tag) { set(&wire, tag); }
+
+    void set(Wire* wire, Tag tag) {
+      auto pos = tags.find(wire);
+      if (pos != tags.end()) {
+        if (pos->second != tag) {
+          // already tagged with a different tag
+          bool inserted = conflictingTags.insert(wire).second;
+          inserted |= conflictingTags.insert(pos->first).second;
+          if (inserted) { // first time reporting this combo
+            std::cout << wire->id << " duplicate tags: " << pos->second << " & " << tag << "\n";
+          }
+          return;
+        }
+        // Otherwise we are reassigning the same tag, which is allowed
+      }
+
+      auto rPos = fromTag.find(tag);
+      if (rPos != fromTag.end()) {
+        if (rPos->second != wire) {
+          // tag already assigend to a different wire
+          bool inserted = duplicateTags.insert(wire).second;
+          inserted |= duplicateTags.insert(rPos->second).second;
+          if (inserted) { // first time reporting this combination
+            std::cout << wire->id << " and " << rPos->second->id << " both use same tag: " << tag << "\n";
+          }
+          return;
+        }
+        // Otherwise we are reassigning the same tag to the same wire, which is allowed
+      }
+        
+      tags[wire] = tag;
+      fromTag[tag] = wire;
+    }
+
+    Tag get(Wire& wire) const {
+      auto pos = tags.find(&wire);
+      return (pos != tags.end()) ? pos->second : Tag{ Tag::Invalid, 0 };
+    }
+
+    Wire* get(Tag tag) const {
+      // A bit inefficient, but I can optimize it by adding a reverse map if necessary      
+      auto pos = fromTag.find(tag);
+      return (pos != fromTag.end()) ? pos->second : nullptr;
+    }
+
+    Wire* get(Tag::Type type, uint8_t bit) const {
+      // A bit inefficient, but I can optimize it by adding a reverse map if necessary      
+      auto pos = fromTag.find(Tag{type, bit});
+      return (pos != fromTag.end()) ? pos->second : nullptr;
+    }
+
+  };
+
+  /** Tag all wires by propagating information from the input through the gates to the output
+   *  conflicting tags 
+   * 
+   *  Tagging is performed with the following processing scheme in mind: (special treatment for the first and last bit are needed)
+   *   z00 = x00 XOR y00
+   *   c00 = x00 AND y00
+   *   
+   *   r01 = x01 XOR y01
+   *   z01 = c00 XOR r01
+   *   s01 = x01 AND y01
+   *   t01 = c00 AND r01
+   *   c01 = s01 OR t01
+   *   ...
+   *   z41 = c40 = s40 OR t40
+   */
+  TagResult tagWires() {
+    TagResult tags(wires);
     
-    // The network is constructed as follows: (special treatment for the first and last bit are needed)
-    // z00 = x00 XOR y00
-    // c00 = x00 AND y00
-    // 
-    // z01 = c00 XOR r01
-    // r01 = x01 XOR y01
-    // s01 = x01 AND y01
-    // t01 = c00 AND r01
-    // c01 = s01 OR t01
+    uint8_t nOutputBits = 0;
+    uint8_t nInputBits = 0;
 
-
-
-    // ...
-    // z41 = c40 = s40 OR t40
-
-    // We should be able to construct a normalized network (with the above naming scheme to find wrong connections)
-
-    std::unordered_set<Wire*> rWires, sWires, tWires;
-
-    // First find a## wires
-    for (auto& gate : gates) {
-      if (gate.op == XOR && gate.inputA->id[0] == 'x' && gate.inputB->id[0] == 'y') { // r## = x## XOR y##
-        if (gate.inputA->id != "x00") {
-          if (gate.output->id[0] != 'z') { // z00 = x00 XOR y00 (and don't rename outputs)
-            gate.output->id = "r" + gate.inputA->id.substr(1, 2);
-            rWires.insert(gate.output);
-          } else {
-            std::cout << "[ERR] found " << gate.output->id << " should be " << "r" << gate.inputA->id.substr(1, 2) << "\n";
-          }
-        }
-      }
-    }
-
-    // Find p## and c00 wires
-    for (auto& gate : gates) {
-      if (gate.op == AND && gate.inputA->id[0] == 'x' && gate.inputB->id[0] == 'y') { // s## = x## AND y##
-        if (gate.inputA->id == "x00") { // c00 = x00 AND y00
-          gate.output->id = "c00";
-        } else if (gate.output->id[0] != 'z') { // cannot rename outputs
-          gate.output->id = "s" + gate.inputA->id.substr(1, 2);
-          sWires.insert(gate.output);
-        } else {
-          std::cout << "[ERR] found " << gate.output->id << " should be " << "s" << gate.inputA->id.substr(1, 2) << "\n";
-        }
-      }
-    }
-
-    std::ranges::for_each(gates, [](Gate& gate) { gate.sortInputs(); });
-
-    // Find q## wires
-    for (auto& gate : gates) {
-      // We need to check for r## on both positions as the inputs are sorted alphabetically and we don't know the
-      // name of the other input
-      if (gate.op == AND && rWires.contains(gate.inputA)) { // t## = c[n-1] AND r## (but c[n-1] is not yet known)
-        if (gate.output->id[0] != 'z') { // cannot rename outputs
-          gate.output->id = "t" + gate.inputA->id.substr(1, 2);
-          tWires.insert(gate.output);
-        } else {
-          std::cout << "[ERR] found " << gate.output->id << " should be " << "t" << gate.inputA->id.substr(1, 2) << "\n";
-        }
-      } else if (gate.op == AND && rWires.contains(gate.inputB)) { // t## = c[n-1] AND r## (but c[n-1] is not yet known)
-        if (gate.output->id[0] != 'z') { // cannot rename outputs
-          gate.output->id = "t" + gate.inputB->id.substr(1, 2);
-          tWires.insert(gate.output);
-        } else {
-          std::cout << "[ERR] found " << gate.output->id << " should be " << "t" << gate.inputA->id.substr(1, 2) << "\n";
-        }
-      }
-    }
-
-    std::ranges::for_each(gates, [](Gate& gate) { gate.sortInputs(); });
-
-    // Finally find c## wires
-    for (auto& gate : gates) {
-      if (gate.op == OR && sWires.contains(gate.inputA) && tWires.contains(gate.inputB)) { // c## = s## OR t##
-        if (gate.output->id[0] != 'z') { // cannot rename output
-          if (gate.inputA->id.substr(1,2) == gate.inputB->id.substr(1, 2)) { // ids should match
-            gate.output->id = "c" + gate.inputA->id.substr(1, 2);
-          } else {
-            std::cout << "[ERR] found " << gate.output->id << " should be " << "c" << gate.inputA->id.substr(1, 2) << ", but input ids differ!\n";
-          }
-        } else {
-          std::cout << "[ERR] found " << gate.output->id << " should be " << "c" << gate.inputA->id.substr(1, 2) << "\n";
-        }
-      }
-    }
-
-    std::cout << "\n\n";
-
-    std::ranges::for_each(gates, [](Gate& gate) { gate.sortInputs(); });
-
-    // first print out the network as it is
-    for (int bit = 0;; ++bit) {
+    // First tag input/output wires
+    for (uint8_t bit = 0;; ++bit) {
       auto pos = wires.find(std::format("z{:02}", bit));
       if (pos == wires.end()) {
+        nOutputBits = bit;
+        nInputBits = bit - 1;
         break; // no more output bits
       }
+      tags.set(pos->second, Tag::Z, bit);
 
-      auto& wire = pos->second;
-      std::cout << wire;
+      pos = wires.find(std::format("x{:02}", bit));
+      if (pos != wires.end()) {
+        tags.set(pos->second, Tag::X, bit);
+      }
+      
+      pos = wires.find(std::format("y{:02}", bit));
+      if (pos != wires.end()) {
+        tags.set(pos->second, Tag::Y, bit);
+      }
     }
 
-    std::cout << "\n\n";
-    // print renaming map
-    for (auto& [id, wire] : wires) {
-      std::cout << id << " -> " << wire.id << "\n";
+    // To propagate all symbols in a single forward pass, we will construct a map, which 
+    // maps each wire to the gates it is used as input in
+    std::unordered_map<Wire*, std::vector<Gate*>> inputMap;
+    for (auto& gate : gates) {
+      inputMap[gate.inputA].push_back(&gate);
+      inputMap[gate.inputB].push_back(&gate);
     }
 
 
+    // Now propagate all inputs bit by bit
+    // Special case for bit 0
+    auto x00 = tags.get({ Tag::X, 0 });
+    for (auto gate : inputMap[x00]) {
+      if (gate->op == XOR) { // since inputs are never swapped, this must be the z00 = x00 XOR y00
+        tags.set(gate->output, Tag::Z, 0);
+      } else if (gate->op == AND) { // must be c00 = x00 AND y00
+        tags.set(gate->output, Tag::C, 0);
+      }
+    }
+
+    // Now propagate the tags bit by bit except for the last output bit, which needs special treatment
+    for (uint8_t bit = 1; bit < nInputBits; ++bit) {
+      // First R and S tags, which are trivial
+      auto x01 = tags.get(Tag::X, bit);
+      for (auto gate : inputMap[x01]) {
+        if (gate->op == XOR) { // since inputs are never swapped, this must be the r[i] = x[i] XOR y[i]
+          tags.set(gate->output, Tag::R, bit);
+        } else if (gate->op == AND) { // s[i] = x[i] AND y[i]
+          tags.set(gate->output, Tag::S, bit);
+        }
+      }
+
+      // Now find z[i] and t[i]
+      auto c00 = tags.get(Tag::C, bit - 1);
+      auto r01 = tags.get(Tag::R, bit);
+
+      for (auto wire : {c00, r01}) { // check through both wires, in case one of them is unknown (missing tag)
+        if (wire) { 
+          for (auto gate : inputMap[wire]) {
+            if (gate->op == XOR) { // this should be z[i] = c[i-1] XOR r[i]
+              tags.set(gate->output, Tag::Z, bit);
+              // We should also tag the other input accordingly, otherwise we will miss some wrongly connected outputs
+              tags.set(gate->getOtherInput(wire), (wire == c00) ? Tag{Tag::R, bit} : Tag{Tag::C, static_cast<uint8_t>(bit-1)});
+            } else if (gate->op == AND) { // this shoud be t[i] = c[i-1] AND r[i] 
+              tags.set(gate->output, Tag::T, bit);
+              tags.set(gate->getOtherInput(wire), (wire == c00) ? Tag{ Tag::R, bit } : Tag{ Tag::C, static_cast<uint8_t>(bit - 1) });
+            }
+          }
+        }
+      }
+
+      // Finally tag the carry
+      auto s01 = tags.get(Tag::S, bit);
+      auto t01 = tags.get(Tag::T, bit);
+
+      for (auto wire : { s01, t01 }) { // check through both wires, in case one of them is unknown (missing tag)
+        if (wire) {
+          for (auto gate : inputMap[wire]) {
+            if (gate->op == OR) { // this should be c[i] = s[i] OR t[i]
+              if (bit == nInputBits - 1) {
+                // For the last bit we must set z[i+1] = c[i] = s[i] OR t[i]
+                tags.set(gate->output, Tag::Z, bit+1);
+                tags.set(gate->getOtherInput(wire), (wire == s01) ? Tag{ Tag::T, bit } : Tag{ Tag::S, bit });
+              } else {
+                tags.set(gate->output, Tag::C, bit);
+                tags.set(gate->getOtherInput(wire), (wire == s01) ? Tag{ Tag::T, bit } : Tag{ Tag::S, bit });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return tags;
+  }
+
+
+  // Part 2: I thought, I would have to iteratively tagWires() and then, swap some of them until we 
+  //         can tag all wires correctly, but the initial tagWires run simply returns all 8 wires, which are wrong... wow!
+  // 
+  std::set<std::string> fixAdder() {
+    auto result = tagWires();
+    auto wrongWires = result.conflictingTags | std::views::transform([](Wire* w) { return w->id; }) | std::ranges::to<std::set>();
+    wrongWires.insert_range(result.duplicateTags | std::views::transform([](Wire* w) { return w->id; }) | std::ranges::to<std::set>());
+    return wrongWires;
   }
 
 
@@ -294,6 +369,19 @@ struct Network {
   std::unordered_map<std::string/*id*/, Wire> wires;
   std::list<Gate> gates;
 };
+
+std::ostream& operator<<(std::ostream& out, Network::Tag tag) {
+  switch (tag.type) {
+    case Network::Tag::X: out << 'x'; break;
+    case Network::Tag::Y: out << 'y'; break;
+    case Network::Tag::R: out << 'r'; break;
+    case Network::Tag::Z: out << 'z'; break;
+    case Network::Tag::S: out << 's'; break;
+    case Network::Tag::T: out << 't'; break;
+    case Network::Tag::C: out << 'c'; break;
+  }
+  return out << std::setfill('0') << std::setw(2) << static_cast<int>(tag.bit);
+}
 
 
 
@@ -308,10 +396,11 @@ int main() {
   //         which wire has been swapped with which other wire.
   //         Interestingly the wires are never swapped between mutliple bits, which would make the search more complex, the swaps 
   //         always happen inside one single adder.
-  network.fixAdder();
+  auto wrongWires = network.fixAdder();
 
   auto t2 = std::chrono::high_resolution_clock::now();
+  std::cout << "\n\n";
   std::cout << "Part 1: " << output << "\n"; // 51657025112326
-  std::cout << "Part 2: " << "gbf,hdt,jgt,mht,nbf,z05,z09,z30" << "\n"; // gbf,hdt,jgt,mht,nbf,z05,z09,z30
+  std::cout << "Part 2: " << stream::join(wrongWires) << "\n"; // gbf,hdt,jgt,mht,nbf,z05,z09,z30
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
