@@ -92,5 +92,6 @@ int main() {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "Part 1: " << matchingPairs << "\n"; // 3395
+  // Apparently this has no part 2... man parsing the input was more effort than the actual task x)
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }
