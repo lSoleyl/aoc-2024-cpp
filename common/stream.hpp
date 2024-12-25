@@ -15,6 +15,7 @@ namespace stream {
       using difference_type = ptrdiff_t;
 
       LineIterator(std::istream& stream) : stream(&stream) { std::getline(stream, line); }
+      LineIterator(const LineIterator& other) : stream(other.stream), line(other.line) {} // needed for post increment
       LineIterator(LineIterator&& other) : stream(other.stream), line(std::move(other.line)) { other.stream = nullptr; }
       LineIterator& operator=(LineIterator&& other) {
         stream = other.stream;
@@ -23,10 +24,23 @@ namespace stream {
         return *this;
       }
 
-      struct Sentinel {};
+      // Needed for std::ranges::begin() support
+      LineIterator& operator=(const LineIterator& other) {
+        stream = other.stream;
+        line = other.line;
+        return *this;
+      }
+
+      struct Sentinel {
+        // Needed for std::ranges::end()
+        bool operator==(const LineIterator& it) const { return it == *this; }
+        bool operator!=(const LineIterator& it) const { return it != *this; }
+      };
 
 
       LineIterator& operator++() { std::getline(*stream, line); return *this;  }
+      // Needed for std::ranges::begin() support
+      LineIterator operator++(int) { auto copy = *this; std::getline(*stream, line); return copy; }
 
       bool operator==(Sentinel) const { return !stream || !*stream; }
       bool operator!=(Sentinel) const { return stream && *stream; }
