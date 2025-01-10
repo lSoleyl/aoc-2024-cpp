@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ranges>
+#include <iterator>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,7 +33,7 @@ struct FieldT {
   bool isAt(const Element& element, const Vector& pos) const { return validPosition(pos) && (*this)[pos] == element; }
 
   int toOffset(const Vector& pos) const { return pos.y * size.x + pos.x; }
-  Vector fromOffset(size_t offset) const { return Vector(offset % size.x, offset / size.x); }
+  Vector fromOffset(size_t offset) const { return Vector(static_cast<int>(offset) % size.x, static_cast<int>(offset) / size.x); }
   size_t findOffset(const Element& element, size_t startOffset = 0) const {
     auto pos = std::find(data.begin() + startOffset, data.end(), element);
     return pos != data.end() ? std::distance(data.begin(), pos) : std::numeric_limits<size_t>::max();
@@ -48,13 +49,13 @@ struct FieldT {
     using element_type = Element;
     using reference = Element&;
     using pointer = Element*;
-    using iterator_category = std::forward_iterator_tag;
-    using iterator_concept = std::input_iterator_tag;
-    using difference_type = ptrdiff_t;
+    using iterator_category = std::random_access_iterator_tag;
+    using difference_type = int;
 
     iterator() : field(nullptr) {}
     iterator(FieldT& field, const Vector& pos, const Vector& direction = Vector(0, 0)) : field(&field), pos(pos), direction(direction) {}
 
+    // Sentinel type, which can alternatively be used in place of an end() iterator
     struct sentinel {};
 
     bool operator==(const iterator& other) const { return pos == other.pos; }
@@ -66,7 +67,23 @@ struct FieldT {
 
     iterator& operator++() { pos += direction; return *this; }
     iterator operator++(int) { auto copy = *this; ++(*this); return copy; }
-    Element& operator*() const { return field->data[pos.y * field->size.x + pos.x]; }
+    iterator& operator-() { pos -= direction; return *this; }
+    iterator operator--(int) { auto copy = *this; --(*this); return copy; }
+    Element& operator*() const { return (*field)[pos]; }
+
+    iterator& operator+=(int offset) { pos += direction * offset; return *this; }
+    iterator& operator-=(int offset) { pos -= direction * offset; return *this; }
+    iterator operator+(int offset) const { auto copy = *this; copy += offset; return copy; }
+    iterator operator-(int offset) const { auto copy = *this; copy -= offset; return copy; }
+    
+    // Determine the difference between two positions
+    // Assumption: other iterator will pass through this position otherwise behavior is undefined
+    difference_type operator-(const iterator& other) const { 
+      auto delta = this->pos - other.pos;
+      return other.direction.x != 0 ? delta.x / other.direction.x : delta.y / other.direction.y;
+    }
+
+    Element& operator[](int index) const { return (*field)[pos + (direction * index)]; }
 
     Vector pos, direction;
     FieldT* field;
@@ -74,7 +91,27 @@ struct FieldT {
 
   auto rangeFromPositionAndDirection(const Vector& position, const Vector& direction) {
     iterator begin(*this, position, direction);
-    return std::ranges::subrange(begin, iterator::sentinel());
+
+    int dx = std::max(direction.x > 0 ? (size.x - position.x) / direction.x :
+                      direction.x < 0 ? (0 - position.x) / direction.x : std::numeric_limits<int>::max(), 0);
+
+    int dy = std::max(direction.y > 0 ? (size.y - position.y) / direction.y :
+                      direction.y < 0 ? (0 - position.y) / direction.y : std::numeric_limits<int>::max(), 0);
+
+    auto distanceToEnd = std::min(dx, dy);
+    return std::ranges::subrange(begin, begin + distanceToEnd);
+  }
+
+  // Return a range representing the i'th row (0-based) left to right
+  auto row(int row) {
+    iterator begin(*this, Vector(0, row), Vector::Right);
+    return std::ranges::subrange(begin, begin + size.x);
+  }
+
+  // Returns a range representing the i'th column (0-based) top to bottom
+  auto column(int column) {
+    iterator begin(*this, Vector(column, 0), Vector::Down);
+    return std::ranges::subrange(begin, begin + size.y);
   }
 
   Vector size;
