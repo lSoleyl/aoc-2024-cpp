@@ -61,7 +61,7 @@ struct MemorySpace : public Field {
       }
 
       // We have 4 paths to expand one in each direction
-      for (auto direction : Vector::AllDirections()) {
+      for (auto direction : Vector::AllSimpleDirections()) {
         auto nextPosition = entry.position + direction;
         if (validPosition(nextPosition) && (*this)[nextPosition] != '#') {
           // No wall -> we can expand in that direction
@@ -81,7 +81,7 @@ struct MemorySpace : public Field {
     for (Vector pos = to; pos != from; ) {
       path.insert(pos);
 
-      for (auto direction : Vector::AllDirections()) {
+      for (auto direction : Vector::AllSimpleDirections()) {
         auto prevPos = pos + direction;
         auto prevCost = getCost(prevPos);
         if (prevCost < cost) {
@@ -137,7 +137,7 @@ int main()
     memSpace[memSpace.bytePositions[i]] = '#';
   }
   auto minPath = memSpace.findPath();
-  auto minCost = minPath.size();
+  auto minCost = minPath.size()-1; // the start position doesn't count as step
 
 
   // Part 2: Brute force of simply performing dijskstra after each change takes ~ 3s

@@ -77,7 +77,7 @@ struct KeypadState {
     auto minCosts = std::numeric_limits<int64_t>::max();
 
     // Try to go in each direction, which reduces the step distance to the target
-    for (auto direction : Vector::AllDirections()) {
+    for (auto direction : Vector::AllSimpleDirections()) {
       auto nextPos = from + direction;
       if (nextPos.stepDistance(to) < from.stepDistance(to) && nextPos != forbidden) {
         // This step brings us closer to the target

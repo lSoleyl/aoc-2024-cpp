@@ -27,7 +27,7 @@ struct RaceField : public Field {
     for (auto position : path) {
       // Check on each position 
       auto walkCost = finder.getCost(position) - 2;
-      for (auto direction : Vector::AllDirections()) {
+      for (auto direction : Vector::AllSimpleDirections()) {
         auto pos1 = position + direction;
         auto pos2 = pos1 + direction;
         auto cheatCost = finder.getCost(pos2);

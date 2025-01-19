@@ -10,7 +10,25 @@ struct XField : public Field {
   XField(std::istream&& source) : Field(std::move(source)) {}
 
   bool startsWithStringAtPositionAndDirection(const Vector& position, const Vector& direction, const std::string& matchString) {
+    #ifdef _DEBUG
+    // custom mismatch implementation for better debugging
+    auto sIt = matchString.begin(), sEnd = matchString.end();
+    auto fieldRange = rangeFromPositionAndDirection(position, direction);
+    auto fIt = fieldRange.begin(), fEnd = fieldRange.end();
+    while (sIt != sEnd && fIt != fEnd) {
+      if (*sIt != *fIt) {
+        break;
+      }
+      ++sIt;
+      ++fIt;
+    }
+
+    return sIt == sEnd; // whole string matched
+    #else
     return std::ranges::mismatch(matchString, rangeFromPositionAndDirection(position, direction)).in1 == matchString.end();
+    #endif
+
+
   }
 
   bool crossMatchesAtCenter(size_t centerOffset, const std::string& matchString) {
@@ -18,12 +36,12 @@ struct XField : public Field {
     const auto center = fromOffset(centerOffset);
 
     int matchingStrings = 0;
-    Vector direction (1, -1); // UP-RIGHT
+    Vector direction = Vector::UpRight;
     for (int i = 0; i < 4; ++i) { // check all four rotations
       if (startsWithStringAtPositionAndDirection(center + direction, direction * -1, matchString)) {
         ++matchingStrings;
       }
-      direction = direction.rotateCCW();
+      direction = direction.rotateCW();
     }
 
     return matchingStrings == 2; // "MAS" must match in exactly two perpendicular directions

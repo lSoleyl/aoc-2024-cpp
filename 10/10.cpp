@@ -45,7 +45,7 @@ int main() {
 
     // Expand the current node by checking all directions
     auto& currentNode = field[nodePosition];
-    for (auto direction : Vector::AllDirections()) {
+    for (auto direction : Vector::AllSimpleDirections()) {
       auto nextPosition = nodePosition + direction;
       if (field.validPosition(nextPosition)) {
         // We can expand in that direction
