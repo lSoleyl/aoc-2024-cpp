@@ -8,13 +8,13 @@
 #include <unordered_map>
 
 #include <common/stream.hpp>
-#include <common/string_view.hpp>
+#include <common/split.hpp>
 
 struct Towels {
   Towels(std::ifstream&& input) {
     std::string line;
     std::getline(input, line);
-    for (auto towel : string_view::split(line, ", ")) {
+    for (auto towel : common::split(line, ", ")) {
       towels.emplace_back(towel);
     }
     std::ranges::sort(towels);
