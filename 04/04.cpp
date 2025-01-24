@@ -10,25 +10,7 @@ struct XField : public Field {
   XField(std::istream&& source) : Field(std::move(source)) {}
 
   bool startsWithStringAtPositionAndDirection(const Vector& position, const Vector& direction, const std::string& matchString) {
-    #ifdef _DEBUG
-    // custom mismatch implementation for better debugging
-    auto sIt = matchString.begin(), sEnd = matchString.end();
-    auto fieldRange = rangeFromPositionAndDirection(position, direction);
-    auto fIt = fieldRange.begin(), fEnd = fieldRange.end();
-    while (sIt != sEnd && fIt != fEnd) {
-      if (*sIt != *fIt) {
-        break;
-      }
-      ++sIt;
-      ++fIt;
-    }
-
-    return sIt == sEnd; // whole string matched
-    #else
     return std::ranges::mismatch(matchString, rangeFromPositionAndDirection(position, direction)).in1 == matchString.end();
-    #endif
-
-
   }
 
   bool crossMatchesAtCenter(size_t centerOffset, const std::string& matchString) {
