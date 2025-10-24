@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include <common/paths.hpp>
+#include <common/task.hpp>
 
 struct RaceField : public Field {
   RaceField(std::istream&& input) : Field(input), finder(*this) {
@@ -89,7 +90,7 @@ struct RaceField : public Field {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  RaceField field(std::ifstream("input.txt"));
+  RaceField field(task::input());
   
   auto savings = field.calculateCheatSavings();
   auto savings2 = field.calculateCheatSavings2();
@@ -98,7 +99,7 @@ int main() {
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << savings << "\n"; // 1422
-  std::cout << "Part 2: " << savings2 << "\n"; // 1009299
+  std::cout << "Part 1: " << savings << "\n";
+  std::cout << "Part 2: " << savings2 << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

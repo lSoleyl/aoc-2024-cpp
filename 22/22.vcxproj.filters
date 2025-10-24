@@ -19,15 +19,4 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="sample2.txt">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
-    <Text Include="input.txt">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
-    <Text Include="sample1.txt">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
-  </ItemGroup>
 </Project>

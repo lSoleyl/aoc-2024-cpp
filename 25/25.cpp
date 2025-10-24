@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include <common/stream.hpp>
+#include <common/task.hpp>
 
 using Key = std::array<int, 5>;
 using Lock = std::array<int, 5>;
@@ -87,11 +88,11 @@ int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
   
-  LockData data(std::ifstream("input.txt"));
+  LockData data(task::input());
   auto matchingPairs = data.countMatchingKeys();
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << matchingPairs << "\n"; // 3395
+  std::cout << "Part 1: " << matchingPairs << "\n";
   // Apparently this has no part 2... man parsing the input was more effort than the actual task x)
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

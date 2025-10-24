@@ -7,6 +7,7 @@
 
 #include <common/vector.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 // implement as C++ Random number engine
 struct MonkeyRandomPriceEngine {
@@ -56,7 +57,7 @@ static constexpr int STEPS_TO_RUN = 2000;
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  std::ifstream input("input.txt");
+  auto input = task::input();
   std::vector<MonkeyRandomPriceEngine> states = { std::istream_iterator<uint32_t>(input), std::istream_iterator<uint32_t>() };
 
   // For Part 2 we have 19^4 possible sequences = 130.321
@@ -107,8 +108,8 @@ int main() {
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << sum << "\n"; // 13004408787
-  std::cout << "Part 2: " << maxProfit << "\n"; // 1455 (0,1,-3,4)
+  std::cout << "Part 1: " << sum << "\n";
+  std::cout << "Part 2: " << maxProfit << "\n";
   std::cout << "MaxSeq: " << (static_cast<int>((maxSequence >> 24) & 0xFF) - 10)
                    << "," << (static_cast<int>((maxSequence >> 16) & 0xFF) - 10)
                    << "," << (static_cast<int>((maxSequence >> 8) & 0xFF) - 10)

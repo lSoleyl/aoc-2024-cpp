@@ -13,6 +13,7 @@
 
 #include <common/stream.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 struct Component {
   Component(std::optional<bool> value = {}) : value(value) {}
@@ -388,7 +389,7 @@ std::ostream& operator<<(std::ostream& out, Network::Tag tag) {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  Network network(std::ifstream("input.txt"));
+  Network network(task::input());
   auto output = network.calculateOutput();
 
   // Part 2: I didn't actually implement an algorithm to fix the adder automatically, which I still intend to do, but instead
@@ -400,7 +401,7 @@ int main() {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "\n\n";
-  std::cout << "Part 1: " << output << "\n"; // 51657025112326
-  std::cout << "Part 2: " << stream::join(wrongWires) << "\n"; // gbf,hdt,jgt,mht,nbf,z05,z09,z30
+  std::cout << "Part 1: " << output << "\n";
+  std::cout << "Part 2: " << stream::join(wrongWires) << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

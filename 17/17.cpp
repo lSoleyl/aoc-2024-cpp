@@ -4,6 +4,8 @@
 #include <chrono>
 #include <ranges>
 
+#include <common/task.hpp>
+
 struct ProgramState {
   ProgramState(std::istream&& input) {
     std::string dummy;
@@ -218,7 +220,7 @@ int main()
   auto t1 = std::chrono::high_resolution_clock::now();
 
   // Part 1:
-  ProgramState program(std::ifstream("input.txt"));
+  ProgramState program(task::input());
   auto registerCopy = program.reg;
   program.run();
   auto part1Output = program.output;
@@ -259,7 +261,7 @@ int main()
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part 1: " << part1Output << "\n"; // 4,1,5,3,1,5,3,5,7
-  std::cout << "Part 2: " << A << "\n"; // 164542125272765
+  std::cout << "Part 1: " << part1Output << "\n";
+  std::cout << "Part 2: " << A << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

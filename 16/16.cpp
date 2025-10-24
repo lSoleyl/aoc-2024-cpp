@@ -9,6 +9,7 @@
 
 #include <common/field.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 const int RotationCost = 1000;
 const int StepCost = 1;
@@ -152,7 +153,7 @@ struct Maze : public Field {
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Maze maze(std::ifstream("input.txt"));
+  Maze maze(task::input());
 
   auto minCost = maze.solve();
   auto positions = maze.findBestPathPositions(minCost);
@@ -164,8 +165,8 @@ int main() {
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << minCost << "\n"; // 109516
-  std::cout << "Part 2: " << positions.size() << "\n"; // 568
+  std::cout << "Part 1: " << minCost << "\n";
+  std::cout << "Part 2: " << positions.size() << "\n";
 
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

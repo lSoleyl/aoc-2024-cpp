@@ -19,9 +19,4 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="results.txt">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
-  </ItemGroup>
 </Project>

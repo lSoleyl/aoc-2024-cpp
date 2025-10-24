@@ -9,6 +9,7 @@
 
 #include <common/stream.hpp>
 #include <common/split.hpp>
+#include <common/task.hpp>
 
 struct Towels {
   Towels(std::ifstream&& input) {
@@ -91,7 +92,7 @@ int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
   // Part 1:
-  Towels towels(std::ifstream("input.txt"));
+  Towels towels(task::input());
   auto towelCount = towels.filterImpossibleDesigns();
 
   // Part 2:
@@ -100,7 +101,7 @@ int main() {
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << towelCount << "\n"; // 269
-  std::cout << "Part 2: " << allOptions << "\n"; // 758839075658876
+  std::cout << "Part 1: " << towelCount << "\n";
+  std::cout << "Part 2: " << allOptions << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

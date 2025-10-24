@@ -14,6 +14,7 @@
 #include <chrono>
 #include <atomic>
 
+#include <common/task.hpp>
 
 using Operator = int64_t(*)(int64_t a, int64_t b);
 
@@ -61,7 +62,7 @@ struct Sequence {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  std::ifstream file("input.txt");
+  auto file = task::input();
   std::string line;
   std::vector<Sequence> sequences;
   while (std::getline(file, line)) {
@@ -114,7 +115,7 @@ int main() {
   auto t2 = std::chrono::high_resolution_clock::now();
 
 
-  std::cout << "Part1: " << result << " (correct = " << correctSequences << ")\n"; // 6231007345478 (correct = 274)
-  std::cout << "Part2: " << result2 << " (correct = " << correctSequences2 << ")\n"; // 333027885676693 (correct = 539)
+  std::cout << "Part1: " << result << " (correct = " << correctSequences << ")\n";
+  std::cout << "Part2: " << result2 << " (correct = " << correctSequences2 << ")\n";
   std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

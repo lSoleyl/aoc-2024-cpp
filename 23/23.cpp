@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include <common/stream.hpp>
+#include <common/task.hpp>
 
 static const int COMPUTERS_PER_SET = 3;
 
@@ -117,14 +118,14 @@ struct Network {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  Network network(std::ifstream("input.txt"));
+  Network network(task::input());
 
   auto groupCount = network.countComputerGroups();
   auto largestGroup = network.findLargestGroup();
 
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << groupCount << "\n"; // 1253
-  std::cout << "Part 2: " << largestGroup << "\n"; // ag,bt,cq,da,hp,hs,mi,pa,qd,qe,qi,ri,uq
+  std::cout << "Part 1: " << groupCount << "\n";
+  std::cout << "Part 2: " << largestGroup << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

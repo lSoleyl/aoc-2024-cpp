@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include <common/task.hpp>
+
 
 int main()
 {
@@ -14,7 +16,7 @@ int main()
 
   // Read in file and  populate both vectors
   {
-    std::ifstream file("input.txt");
+    auto file = task::input();
     while (file) {
       int a, b;
       file >> a >> b;
@@ -44,4 +46,3 @@ int main()
 
   std::cout << "Part2: " << similarityScore << "\n";
 }
-// 2057374

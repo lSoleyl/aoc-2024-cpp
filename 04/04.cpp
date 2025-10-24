@@ -5,6 +5,7 @@
 #include <iterator>
 
 #include <common/field.hpp>
+#include <common/task.hpp>
 
 struct XField : public Field {
   XField(std::istream&& source) : Field(std::move(source)) {}
@@ -33,7 +34,7 @@ struct XField : public Field {
 
 int main()
 {
-  XField field(std::ifstream("input.txt"));
+  XField field(task::input());
   
   const auto allDirections = {
     Vector(0,1), Vector(1,1), Vector(1,0), Vector(1,-1),
@@ -54,7 +55,7 @@ int main()
     }
   }
 
-  std::cout << "Result1: " << matches << "\n"; // 2685
+  std::cout << "Result1: " << matches << "\n";
 
 
   // Part 2
@@ -68,5 +69,5 @@ int main()
     }
   }
 
-  std::cout << "Result2: " << crossMatches << "\n"; // 2048
+  std::cout << "Result2: " << crossMatches << "\n";
 }

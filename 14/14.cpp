@@ -6,11 +6,9 @@
 #include <chrono>
 #include <sstream>
 
-#define NOMINMAX
-#include <windows.h>
-
 #include <common/vector.hpp>
 #include <common/field.hpp>
+#include <common/task.hpp>
 
 const std::regex inputRegex("^p=([0-9]+),([0-9]+) v=(-?[0-9]+),(-?[0-9]+)$");
 
@@ -95,7 +93,7 @@ struct Robots : public std::vector<Robot> {
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Robots robots(std::ifstream("input.txt"));
+  Robots robots(task::input());
 
   auto robotsCopy = robots;
 
@@ -115,8 +113,8 @@ int main() {
   auto sum = std::ranges::fold_left(quadrants, 1, [](int result, auto& entry) { return result * entry.second; });
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Result 1: " << sum << "\n"; // 208437768
-  // Part 2: 7492 ... We could just search directly for the tree, but the animation is also nice to look at
+  std::cout << "Result 1: " << sum << "\n";
+  // Part 2: ... We could just search directly for the tree, but the animation is also nice to look at
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
   system("PAUSE");
   system("CLS");

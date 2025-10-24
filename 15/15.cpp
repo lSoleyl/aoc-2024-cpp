@@ -6,6 +6,7 @@
 
 #include <common/field.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 
 
@@ -149,7 +150,7 @@ struct WarehouseWide : public Warehouse {
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Warehouse warehouse(std::ifstream("input.txt"));
+  Warehouse warehouse(task::input());
   WarehouseWide wideHouse(warehouse);
 
   // Part 1:
@@ -174,8 +175,8 @@ int main() {
   }
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << boxPosSum << "\n"; // 1463715
-  std::cout << "Part 2: " << boxPosSum2 << "\n"; // 1481392
+  std::cout << "Part 1: " << boxPosSum << "\n";
+  std::cout << "Part 2: " << boxPosSum2 << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
   
   std::cout << warehouse;

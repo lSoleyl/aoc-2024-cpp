@@ -8,6 +8,8 @@
 #include <iterator>
 #include <vector>
 
+#include <common/task.hpp>
+
 bool isValidSequence(const std::vector<int>& numbers) {
   auto checkView = numbers
     | std::views::adjacent_transform<2>([](int a, int b) { return a - b; })
@@ -37,7 +39,7 @@ bool hasValidSubSequence(const std::vector<int>& numbers) {
 
 int main()
 {
-  std::ifstream file("input.txt");
+  auto file = task::input();
   std::string line;
   int validSequences = 0;
   int validSubSequences = 0;

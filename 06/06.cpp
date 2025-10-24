@@ -7,7 +7,7 @@
 
 #include <common/field.hpp>
 #include <common/hash.hpp>
-
+#include <common/task.hpp>
 
 template<bool storeVisited>
 struct State {
@@ -62,7 +62,7 @@ struct State {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  Field field(std::ifstream("input.txt"));
+  Field field(task::input());
   
   auto startPosition = field.fromOffset(field.findOffset('^'));
 
@@ -95,8 +95,8 @@ int main() {
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part 1: " << firstRun.visited.size() << "\n"; // 4752
-  std::cout << "Part 2: " << possibleLoops.size() << "\n"; // 1719
+  std::cout << "Part 1: " << firstRun.visited.size() << "\n";
+  std::cout << "Part 2: " << possibleLoops.size() << "\n";
 
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

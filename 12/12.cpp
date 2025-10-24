@@ -10,6 +10,7 @@
 
 #include <common/field.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 struct Region {
   Region(char type, const Vector& startPosition, const Field& field) : type(type) {
@@ -34,7 +35,7 @@ private:
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Field field(std::ifstream("input.txt"));
+  Field field(task::input());
 
   std::vector<Region> regions;
   
@@ -92,7 +93,7 @@ int main() {
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << cost << "\n"; // 1431316
+  std::cout << "Part1: " << cost << "\n";
   std::cout << "Part2: " << discountCost << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

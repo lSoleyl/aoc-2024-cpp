@@ -6,11 +6,12 @@
 #include <chrono>
 
 #include <common/field.hpp>
+#include <common/task.hpp>
 
 int main()
 {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Field field(std::ifstream("input.txt"));
+  Field field(task::input());
 
 
   // First collect all antenna positions grouped by their frequencies
@@ -61,7 +62,7 @@ int main()
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << antiNodes.size() << "\n"; // 344
+  std::cout << "Part1: " << antiNodes.size() << "\n";
   std::cout << "Part2: " << allAntiNodes.size() << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

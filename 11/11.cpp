@@ -7,6 +7,7 @@
 #include <atomic>
 #include <unordered_map>
 
+#include <common/task.hpp>
 
 namespace std {
   template<>
@@ -63,7 +64,7 @@ int64_t stonesAfter(int64_t stone, int steps) {
 int main()
 {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Stones stones(std::ifstream("input.txt"));
+  Stones stones(task::input());
    
   // Part1:
   int64_t sum1 = 0;
@@ -78,7 +79,7 @@ int main()
   }
   
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part1: " << sum1 << "\n"; // 199753
-  std::cout << "Part2: " << sum2 << "\n"; // 239413123020116
+  std::cout << "Part1: " << sum1 << "\n";
+  std::cout << "Part2: " << sum2 << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";  
 }

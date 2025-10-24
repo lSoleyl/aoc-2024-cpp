@@ -11,6 +11,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <common/task.hpp>
+
 std::unordered_map<int, std::unordered_set<int>> beforeSet, afterSet;
 
 bool isValidSequence(const std::vector<int>& numbers) {
@@ -36,7 +38,7 @@ int main()
 {
   
 
-  std::ifstream file("input.txt");
+  auto file = task::input();
   std::string line;
 
   // Read conditions
@@ -63,7 +65,7 @@ int main()
     }
   }
   
-  std::cout << "Part1: " << sum << "\n"; // 4996
+  std::cout << "Part1: " << sum << "\n";
 
 
   // Part2 

@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include <common/field.hpp>
+#include <common/task.hpp>
 
 
 struct ExpandEntry {
@@ -130,7 +131,7 @@ int main()
 {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  MemorySpace memSpace(std::ifstream("input.txt"));
+  MemorySpace memSpace(task::input());
 
   // Part 1
   for (int i = 0; i < 1024; ++i) {
@@ -162,7 +163,7 @@ int main()
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << minCost << "\n"; // 290
-  std::cout << "Part2: " << bytePos << "\n"; // 64,54
+  std::cout << "Part1: " << minCost << "\n";
+  std::cout << "Part2: " << bytePos << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

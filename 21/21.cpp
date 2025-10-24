@@ -6,6 +6,7 @@
 
 #include <common/vector.hpp>
 #include <common/hash.hpp>
+#include <common/task.hpp>
 
 
 using Keypad = std::unordered_map<char/*key*/, Vector/*pos*/>;
@@ -146,12 +147,12 @@ struct RobotControl {
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  RobotControl control(std::ifstream("input.txt"));
+  RobotControl control(task::input());
   auto complexities = control.countSequenceComplexities(2);
   auto complexities2 = control.countSequenceComplexities(25);
 
   auto t2 = std::chrono::high_resolution_clock::now();
-  std::cout << "Part 1: " << complexities << "\n"; // 270084
-  std::cout << "Part 2: " << complexities2 << "\n"; // 329431019997766
+  std::cout << "Part 1: " << complexities << "\n";
+  std::cout << "Part 2: " << complexities2 << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

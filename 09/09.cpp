@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <chrono>
 
+#include <common/task.hpp>
+
 struct Block {
   Block() : id(Block::FREE), size(0) {}
   Block(int id, int size) : id(id), size(size) {}
@@ -41,7 +43,7 @@ int main()
   {
     int nextBlockId = 0;
     bool freeBlock = false;
-    std::ifstream file("input.txt");
+    auto file = task::input();
     for (char sizeCh; file >> sizeCh; freeBlock = !freeBlock) {
       int blockSize = sizeCh - '0'; // 0-9
       if (freeBlock) {
@@ -163,7 +165,7 @@ int main()
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << checksum << "\n"; // 6216544403458
-  std::cout << "Part2: " << checksum2 << "\n"; // 6231447300867
+  std::cout << "Part1: " << checksum << "\n";
+  std::cout << "Part2: " << checksum2 << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

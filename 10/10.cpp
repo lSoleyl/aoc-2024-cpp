@@ -7,6 +7,7 @@
 #include <set>
 
 #include <common/field.hpp>
+#include <common/task.hpp>
 
 struct MapElement {
   MapElement(char ch) : height(ch) {}
@@ -24,7 +25,7 @@ std::ostream& operator<<(std::ostream& out, const MapElement& element) {
 
 int main() {
   auto t1 = std::chrono::high_resolution_clock::now();
-  FieldT<MapElement> field(std::ifstream("input.txt"));
+  FieldT<MapElement> field(task::input());
 
   // We collect the nodes to process in a queue to ensure we will first process all '9', then all '8', ... that way
   // we never have to update any trailhead values for other numbers than the current processed one
@@ -80,7 +81,7 @@ int main() {
   
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part1: " << uniqueHeadSum << "\n"; // 617 
-  std::cout << "Part2: " << allHeadSum << "\n"; // 1477
+  std::cout << "Part1: " << uniqueHeadSum << "\n";
+  std::cout << "Part2: " << allHeadSum << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

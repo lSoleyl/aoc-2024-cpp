@@ -140,7 +140,7 @@ bool checkResult(int taskNr, const std::pair<std::string, std::optional<std::str
 // This project will check the results of all exercises (to validate correct it works correct after refactorings)
 int main()
 {
-  for (auto line : stream::lines(std::ifstream("results.txt"))) {
+  for (auto line : stream::lines(std::ifstream("..\\data\\results.txt"))) {
     std::smatch match;
     std::regex_match(line, match, resultsRegex);
     if (match[1].matched) {

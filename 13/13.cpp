@@ -6,6 +6,7 @@
 #include <string>
 
 #include <common/vector.hpp>
+#include <common/task.hpp>
 
 std::regex buttonRegex("^Button [AB]: X\\+([0-9]+), Y\\+([0-9]+)$");
 std::regex prizeRegex("^Prize: X=([0-9]+), Y=([0-9]+)$");
@@ -63,7 +64,7 @@ struct Games : public std::vector<Game> {
 int main()
 {
   auto t1 = std::chrono::high_resolution_clock::now();
-  Games games(std::ifstream("input.txt"));
+  Games games(task::input());
 
   int64_t totalCoins = 0;
   int64_t correctedCoins = 0;
@@ -79,7 +80,7 @@ int main()
   
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "Part 1: " << totalCoins << "\n"; // 31589
-  std::cout << "Part 2: " << correctedCoins << "\n"; // 98080815200063
+  std::cout << "Part 1: " << totalCoins << "\n";
+  std::cout << "Part 2: " << correctedCoins << "\n";
   std::cout << "Time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 }

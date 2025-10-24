@@ -3,19 +3,12 @@
 #include <fstream>
 #include <ranges>
 
+#include <common/task.hpp>
+
 int main()
 {
-  std::string content;
-
-  {
-    // Read full file into the content string
-    std::ifstream file("input.txt", std::ios::binary);
-    file.seekg(0, std::ios::end);
-    auto fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    content.resize(fileSize);
-    file.read(const_cast<char*>(content.data()), content.size());
-  }
+  // Read full input file into a string
+  std::string content = task::inputString();
 
 
   bool enabled = true;
@@ -36,6 +29,6 @@ int main()
     }
   }
   
-  std::cout << "Part1: " << result << "\n"; // 184122457
-  std::cout << "Part2: " << (result - disabledSum) << "\n"; // 107862689
+  std::cout << "Part1: " << result << "\n";
+  std::cout << "Part2: " << (result - disabledSum) << "\n";
 }
